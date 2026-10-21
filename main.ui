@@ -1,0 +1,3602 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>780</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>سیستم مدیریت درخواست‌های تعمیرات</string>
+  </property>
+  <property name="layoutDirection">
+   <enum>Qt::LayoutDirection::RightToLeft</enum>
+  </property>
+  <property name="styleSheet">
+   <string>QFrame#navigationPanel { background: #F1F5F9; border: 1px solid #D7E0EA; border-radius: 8px; }
+QFrame#navigationPanel QLabel { color: #243447; font-size: 11pt; }
+QPushButton { min-height: 38px; padding: 5px 8px; border: 1px solid #C7D0DB; border-radius: 5px; background: white; color: #263445; font-size: 11pt; }
+QPushButton:hover { background: #DCEAF8; border-color: #7EA9D6; }
+QPushButton:pressed { background: #C4DCF3; }
+QTabBar::tab { font-family: "B Nazanin"; font-size: 14pt; font-weight: bold; min-height: 42px; padding: 6px 15px; background: #E8EEF5; color: #263445; border: 1px solid #C7D0DB; }
+QTabBar::tab:selected { background: white; color: #1565A8; border-top: 3px solid #1976D2; }
+QTabWidget::pane { border: 1px solid #C7D0DB; background: white; }
+
+/* کارت‌های اتاق: ساختار و ظاهر ثابت در main.ui؛ Python فقط وضعیت/متن هر کارت را تعیین می‌کند. */
+QPushButton#hotelRoomCardButton { text-align: center; padding: 9px; border: 1px solid #C9CED4; border-radius: 10px; color: #667085; background: #F1F3F5; font-family: "B Nazanin"; font-size: 11pt; font-weight: bold; }
+QPushButton#hotelRoomCardButton[hotelStatus="vacant"] { background: #F0F9F3; border-color: #8CC9A0; color: #21864B; }
+QPushButton#hotelRoomCardButton[hotelStatus="occupied"] { background: #FFF3F1; border-color: #E6A39B; color: #B9382B; }
+QPushButton#hotelRoomCardButton[hotelStatus="reserved"] { background: #FFF7E8; border-color: #E7C078; color: #996515; }
+QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
+</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayoutApplication">
+    <property name="leftMargin">
+     <number>8</number>
+    </property>
+    <property name="topMargin">
+     <number>8</number>
+    </property>
+    <property name="rightMargin">
+     <number>8</number>
+    </property>
+    <property name="bottomMargin">
+     <number>8</number>
+    </property>
+    <property name="spacing">
+     <number>8</number>
+    </property>
+    <item>
+     <widget class="QFrame" name="navigationPanel">
+      <property name="minimumSize">
+       <size>
+        <width>220</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>220</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Shape::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Shadow::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayoutNavigation">
+       <property name="leftMargin">
+        <number>12</number>
+       </property>
+       <property name="topMargin">
+        <number>12</number>
+       </property>
+       <property name="rightMargin">
+        <number>12</number>
+       </property>
+       <property name="bottomMargin">
+        <number>12</number>
+       </property>
+       <property name="spacing">
+        <number>8</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="lblNavigationTitle">
+         <property name="text">
+          <string>سامانه مدیریت</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="lblNavigationUser">
+         <property name="text">
+          <string>خوش آمدید</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="navigationLine">
+         <property name="frameShape">
+          <enum>QFrame::Shape::HLine</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Sunken</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnHome">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>صفحه اصلی</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnPassword">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>تغییر رمز عبور</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnUsers">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>مدیریت کاربران</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnTabPermissions">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>تعیین اینکه هر کاربر به کدام تب‌های سامانه دسترسی داشته باشد</string>
+         </property>
+         <property name="text">
+          <string>تعیین دسترسی تب‌ها</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnRepairs">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>درخواست کار</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnEquipment">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>تجهیزات</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnAssets">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>اموال</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnHotel">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>اتاق‌داری</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnReports">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>گزارش و پیگیری</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnAnbarTahrir">
+         <property name="text">
+          <string>انبار لوازم‌التحریر</string>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnMtoTahrir">
+         <property name="text">
+          <string>تقاضای لوازم‌التحریر</string>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="navigationVerticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnExit">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>خروج از برنامه</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QTabWidget" name="tabMain">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="layoutDirection">
+       <enum>Qt::LayoutDirection::RightToLeft</enum>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="tabHome">
+       <property name="layoutDirection">
+        <enum>Qt::LayoutDirection::RightToLeft</enum>
+       </property>
+       <attribute name="title">
+        <string>صفحه اصلی</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayoutHome">
+        <item>
+         <widget class="QLabel" name="lblHomeTitle">
+          <property name="text">
+           <string>سیستم مدیریت درخواست‌های تعمیرات</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayoutHome">
+          <item row="0" column="0">
+           <widget class="QPushButton" name="btnOpenKar">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>70</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>درخواست کار</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="btnOpenUsers">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>70</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>مدیریت کاربران</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="btnOpenPassword">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>70</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>تغییر رمز عبور</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="btnOpenReports">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>70</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>گزارش و پیگیری</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QPushButton" name="btnOpenEquipment">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>70</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>تجهیزات</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QPushButton" name="btnOpenMesc">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>70</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>مدیریت کد کالاهای MESC</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QPushButton" name="btnOpenAssets">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>70</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>اموال</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QPushButton" name="btnOpenHotel">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>70</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>مدیریت اتاق‌داری</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QPushButton" name="btnOpenAnbarTahrir">
+            <property name="text">
+             <string>انبار لوازم‌التحریر</string>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>70</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QPushButton" name="btnOpenMtoTahrir">
+            <property name="text">
+             <string>تقاضای لوازم‌التحریر</string>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>70</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacerHome">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabKar">
+       <attribute name="title">
+        <string>درخواست کار</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayoutKar">
+        <item alignment="Qt::AlignmentFlag::AlignRight">
+         <widget class="QPushButton" name="btnBackHomeKar">
+          <property name="minimumSize">
+           <size>
+            <width>170</width>
+            <height>36</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>خروج از این تب</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayoutKarTop">
+          <item>
+           <layout class="QFormLayout" name="formLayoutKar">
+            <property name="labelAlignment">
+             <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+            </property>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string>شماره درخواست:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="lblWonumber">
+              <property name="text">
+               <string />
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_12">
+              <property name="text">
+               <string>واحد درخواست‌کننده:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QComboBox" name="cmbVahed" />
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_13">
+              <property name="text">
+               <string>تاریخ درخواست:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLineEdit" name="dateTarikhdarkhast" />
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_15">
+              <property name="text">
+               <string>موضوع:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QComboBox" name="cmbMozooe" />
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_16">
+              <property name="text">
+               <string>منطقه کار:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QLineEdit" name="txtMahalkarf" />
+            </item>
+            <item row="5" column="0">
+             <widget class="QLabel" name="label_17">
+              <property name="text">
+               <string>محل کار:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="QLineEdit" name="txtMahalkara" />
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="label_18">
+              <property name="text">
+               <string>ثبت‌کننده:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="1">
+             <widget class="QLabel" name="lblDarkhastkonande">
+              <property name="text">
+               <string />
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayoutSharh">
+            <item>
+             <widget class="QLabel" name="label_14">
+              <property name="text">
+               <string>شرح کار:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPlainTextEdit" name="txtSharh" />
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayoutKarButtons">
+              <item>
+               <widget class="QPushButton" name="btnSaveKar">
+                <property name="text">
+                 <string>ثبت درخواست</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnNewKar">
+                <property name="text">
+                 <string>درخواست جدید</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnClearKar">
+                <property name="text">
+                 <string>پاک کردن فرم</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayoutSearch">
+          <item>
+           <widget class="QLabel" name="lblSearch">
+            <property name="text">
+             <string>جستجو:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="txtSearchKar" />
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="tblKarList">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>1</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabUserManagement">
+       <attribute name="title">
+        <string>تعریف و مدیریت کاربران</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayoutUsers">
+        <item alignment="Qt::AlignmentFlag::AlignRight">
+         <widget class="QPushButton" name="btnBackHomeUsers">
+          <property name="minimumSize">
+           <size>
+            <width>170</width>
+            <height>36</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>خروج از این تب</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayoutUserForm">
+          <item>
+           <layout class="QFormLayout" name="formLayoutUser">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_4">
+              <property name="text">
+               <string>نام و نام خانوادگی:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLineEdit" name="txtFullName" />
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>نام کاربری:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="txtUserLogin" />
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_6">
+              <property name="text">
+               <string>رمز عبور:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLineEdit" name="txtPassword">
+              <property name="echoMode">
+               <enum>QLineEdit::EchoMode::Password</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_7">
+              <property name="text">
+               <string>تکرار رمز عبور:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QLineEdit" name="txtPassword2">
+              <property name="echoMode">
+               <enum>QLineEdit::EchoMode::Password</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_8">
+              <property name="text">
+               <string>سمت:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QLineEdit" name="txtSamat" />
+            </item>
+            <item row="5" column="0">
+             <widget class="QLabel" name="label_9">
+              <property name="text">
+               <string>واحد:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="QComboBox" name="cmbUserVahed" />
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="label_10">
+              <property name="text">
+               <string>سطح دسترسی:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="1">
+             <widget class="QComboBox" name="cmbUserLevel" />
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayoutUserButtons">
+            <item>
+             <widget class="QPushButton" name="btnSaveUser">
+              <property name="text">
+               <string>ثبت کاربر</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnEditUser">
+              <property name="text">
+               <string>ویرایش</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnDeleteUser">
+              <property name="text">
+               <string>حذف کاربر</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnClear">
+              <property name="text">
+               <string>پاک کردن</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnCancel">
+              <property name="text">
+               <string>بازگشت</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacerUserButtons">
+              <property name="orientation">
+               <enum>Qt::Orientation::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="tblUsers">
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+          </property>
+          <column>
+           <property name="text">
+            <string>نام کاربری</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>نام</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>واحد</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>سطح دسترسی</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabChangePassword">
+       <attribute name="title">
+        <string>تغییر رمز عبور</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayoutPassword">
+        <item alignment="Qt::AlignmentFlag::AlignRight">
+         <widget class="QPushButton" name="btnBackHomePassword">
+          <property name="minimumSize">
+           <size>
+            <width>170</width>
+            <height>36</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>خروج از این تب</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QFormLayout" name="formLayoutPassword">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>انتخاب کاربر:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="cmbChangeUser" />
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>رمز جدید:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="txtNewPassword">
+            <property name="echoMode">
+             <enum>QLineEdit::EchoMode::Password</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>تکرار رمز جدید:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="txtNewPassword2">
+            <property name="echoMode">
+             <enum>QLineEdit::EchoMode::Password</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayoutPasswordButtons">
+          <item>
+           <widget class="QPushButton" name="btnChangePassword">
+            <property name="text">
+             <string>تغییر رمز</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnCancelPassword">
+            <property name="text">
+             <string>انصراف</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacerPassword">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacerPassword">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabReport">
+       <attribute name="title">
+        <string>گزارش و پیگیری کارها</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayoutReport">
+        <item alignment="Qt::AlignmentFlag::AlignRight">
+         <widget class="QPushButton" name="btnBackHomeReport">
+          <property name="minimumSize">
+           <size>
+            <width>170</width>
+            <height>36</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>خروج از این تب</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupReportFilters">
+          <property name="title">
+           <string>فیلتر گزارش</string>
+          </property>
+          <layout class="QGridLayout" name="gridReportFilters">
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblReportSearch">
+             <property name="text">
+              <string>جستجو:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="txtReportSearch" />
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="lblReportUnit">
+             <property name="text">
+              <string>واحد درخواست‌کننده:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QComboBox" name="cmbReportUnit" />
+           </item>
+           <item row="0" column="4">
+            <widget class="QLabel" name="lblReportTopic">
+             <property name="text">
+              <string>موضوع درخواست:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="5">
+            <widget class="QComboBox" name="cmbReportTopic" />
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblReportStatus">
+             <property name="text">
+              <string>وضعیت کار:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="cmbReportStatus" />
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="lblReportFrom">
+             <property name="text">
+              <string>از تاریخ (شمسی):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QLineEdit" name="txtReportFrom" />
+           </item>
+           <item row="1" column="4">
+            <widget class="QLabel" name="lblReportTo">
+             <property name="text">
+              <string>تا تاریخ (شمسی):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QLineEdit" name="txtReportTo" />
+           </item>
+           <item row="2" column="4">
+            <widget class="QPushButton" name="btnRefreshReport">
+             <property name="text">
+              <string>نمایش گزارش</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="5">
+            <widget class="QPushButton" name="btnClearReportFilters">
+             <property name="text">
+              <string>حذف فیلترها</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="tblReportList">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>2</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="columnCount">
+           <number>11</number>
+          </property>
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+          </property>
+          <column>
+           <property name="text">
+            <string>ردیف</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>شماره درخواست</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>واحد</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>تاریخ درخواست</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>موضوع درخواست</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>محل کار</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>درخواست‌کننده</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>شرح درخواست</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>وضعیت</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>آخرین تاریخ پیگیری</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>آخرین توضیحات</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupTracking">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="title">
+           <string>ثبت پیگیری و نتیجه کار</string>
+          </property>
+          <layout class="QGridLayout" name="gridTracking">
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblSelectedWorkNoTitle">
+             <property name="text">
+              <string>شماره درخواست انتخاب‌شده:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="lblSelectedWorkNo">
+             <property name="text">
+              <string>—</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="lblTrackingStatusTitle">
+             <property name="text">
+              <string>وضعیت جدید:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QComboBox" name="cmbTrackingStatus" />
+           </item>
+           <item row="0" column="4">
+            <widget class="QLabel" name="lblTrackingDateTitle">
+             <property name="text">
+              <string>تاریخ پیگیری:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="5">
+            <widget class="QLineEdit" name="txtTrackingDate" />
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblTrackingNoteTitle">
+             <property name="text">
+              <string>شرح پیگیری / نتیجه انجام کار:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1" colspan="5">
+            <widget class="QPlainTextEdit" name="txtTrackingNote">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>45</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>65</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QPushButton" name="btnSaveTracking">
+             <property name="text">
+              <string>ثبت پیگیری / تکمیل کار</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QPushButton" name="btnViewTrackingHistory">
+             <property name="text">
+              <string>مشاهده سوابق پیگیری</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabMesc">
+       <property name="layoutDirection">
+        <enum>Qt::LayoutDirection::RightToLeft</enum>
+       </property>
+       <attribute name="title">
+        <string>مدیریت کد کالاهای MESC</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayoutMesc">
+        <item alignment="Qt::AlignmentFlag::AlignRight">
+         <widget class="QPushButton" name="btnBackHomeMesc">
+          <property name="minimumSize">
+           <size>
+            <width>170</width>
+            <height>36</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>خروج از این تب</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupMescFields">
+          <property name="title">
+           <string>اطلاعات کد کالا</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayoutMescFields">
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblMescCode">
+             <property name="text">
+              <string>کد MESC:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="txtMescCode">
+             <property name="placeholderText">
+              <string>کد یکتای کالا</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="lblMescShohazine">
+             <property name="text">
+              <string>شماره هزینه:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QLineEdit" name="txtMescShohazine" />
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblMescSharh">
+             <property name="text">
+              <string>شرح:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="txtMescSharh" />
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="lblMescDescription">
+             <property name="text">
+              <string>Discription:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QLineEdit" name="txtMescDescription" />
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="lblMescUnit">
+             <property name="text">
+              <string>واحد:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="txtMescUnit" />
+           </item>
+           <item row="2" column="2">
+            <widget class="QLabel" name="lblMescPic">
+             <property name="text">
+              <string>تصویر کالا (اختیاری):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="3">
+            <widget class="QWidget" name="mescPicturePanel">
+             <layout class="QHBoxLayout" name="horizontalLayoutMescPicture">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="lblMescPicPreview">
+                <property name="minimumSize">
+                 <size>
+                  <width>150</width>
+                  <height>110</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>150</width>
+                  <height>110</height>
+                 </size>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="text">
+                 <string>تصویری انتخاب نشده</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignmentFlag::AlignCenter</set>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayoutMescPictureButtons">
+                <item>
+                 <widget class="QPushButton" name="btnMescChoosePic">
+                  <property name="text">
+                   <string>انتخاب تصویر</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="btnMescRemovePic">
+                  <property name="text">
+                   <string>حذف تصویر</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="lblMescSabtkonande">
+             <property name="text">
+              <string>ثبت‌کننده:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="txtMescSabtkonande">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="2">
+            <widget class="QLabel" name="lblMescEditor">
+             <property name="text">
+              <string>آخرین ویرایشگر:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="3">
+            <widget class="QLineEdit" name="txtMescEditor">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayoutMescActions">
+          <item>
+           <widget class="QPushButton" name="btnMescNew">
+            <property name="text">
+             <string>رکورد جدید</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnMescSave">
+            <property name="text">
+             <string>ثبت اطلاعات</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnMescEdit">
+            <property name="text">
+             <string>ذخیره ویرایش</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnMescDelete">
+            <property name="text">
+             <string>حذف رکورد</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacerMescActions">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayoutMescSearch">
+          <item>
+           <widget class="QLabel" name="lblMescSearch">
+            <property name="text">
+             <string>جستجو در کد، شرح، شماره هزینه یا واحد:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="txtMescSearch">
+            <property name="placeholderText">
+             <string>عبارت جستجو را وارد کنید...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnMescSearch">
+            <property name="text">
+             <string>جستجو</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="tblMescList">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>220</height>
+           </size>
+          </property>
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+          </property>
+          <property name="rowCount">
+           <number>0</number>
+          </property>
+          <property name="columnCount">
+           <number>8</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>کد MESC</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>شماره هزینه</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>شرح</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Discription</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>واحد</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>ثبت‌کننده</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>ویرایشگر</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>تصویر</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabAmval">
+       <property name="layoutDirection">
+        <enum>Qt::LayoutDirection::RightToLeft</enum>
+       </property>
+       <attribute name="title">
+        <string>اموال</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayoutAmval">
+        <item alignment="Qt::AlignmentFlag::AlignRight">
+         <widget class="QPushButton" name="btnBackHomeAmval">
+          <property name="minimumSize">
+           <size>
+            <width>170</width>
+            <height>36</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>خروج از این تب</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupAmvalFilter">
+          <property name="title">
+           <string>جستجو و فیلتر اموال</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayoutAmvalFilter">
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblAmvalSearch">
+             <property name="text">
+              <string>جستجو:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1" colspan="3">
+            <widget class="QLineEdit" name="txtAmvalSearch">
+             <property name="placeholderText">
+              <string>شماره اموال، شرح، شماره سریال، محل، شماره بودجه یا توضیحات...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <widget class="QLabel" name="lblAmvalUnitFilter">
+             <property name="text">
+              <string>واحد:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="5">
+            <widget class="QComboBox" name="cmbAmvalUnitFilter">
+             <property name="toolTip">
+              <string>فیلتر اموال بر اساس کد واحد؛ نمونه: 5121 برای تعمیرات</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="6">
+            <widget class="QLabel" name="lblAmvalActiveFilter">
+             <property name="text">
+              <string>وضعیت فعال:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="7">
+            <widget class="QComboBox" name="cmbAmvalActiveFilter">
+             <item>
+              <property name="text">
+               <string>همه</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>فعال</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>غیرفعال</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QPushButton" name="btnAmvalSearch">
+             <property name="text">
+              <string>جستجو</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QPushButton" name="btnAmvalClearFilter">
+             <property name="text">
+              <string>حذف فیلتر</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="6">
+            <widget class="QPushButton" name="btnAmvalReport">
+             <property name="text">
+              <string>گزارش اموال</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="7">
+            <widget class="QPushButton" name="btnAmvalPrint">
+             <property name="text">
+              <string>چاپ گزارش</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupAmvalInfo">
+          <property name="title">
+           <string>اطلاعات مال</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayoutAmvalInfo">
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblAmvalID">
+             <property name="text">
+              <string>شناسه:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="txtAmvalID">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="lblAmvalAssetNo">
+             <property name="text">
+              <string>شماره اموال:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QLineEdit" name="txtAmvalAssetNo" />
+           </item>
+           <item row="0" column="4">
+            <widget class="QLabel" name="lblAmvalDescription">
+             <property name="text">
+              <string>شرح:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="5" colspan="3">
+            <widget class="QLineEdit" name="txtAmvalDescription" />
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblAmvalStatus">
+             <property name="text">
+              <string>وضعیت:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="txtAmvalStatus" />
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="lblAmvalUsePlace">
+             <property name="text">
+              <string>محل استفاده:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QLineEdit" name="txtAmvalMahal" />
+           </item>
+           <item row="1" column="4">
+            <widget class="QLabel" name="lblAmvalSerial">
+             <property name="text">
+              <string>شماره سریال:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QLineEdit" name="txtAmvalSerial" />
+           </item>
+           <item row="1" column="6">
+            <widget class="QLabel" name="lblAmvalLocCode">
+             <property name="text">
+              <string>کد محل (Loc Code):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="7">
+            <widget class="QLineEdit" name="txtAmvalLocCode" />
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="lblAmvalInvDate">
+             <property name="text">
+              <string>تاریخ ورود:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="txtAmvalInvDate">
+             <property name="placeholderText">
+              <string>شمسی: 1405/07/18</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QLabel" name="lblAmvalExitDate">
+             <property name="text">
+              <string>تاریخ خروج:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="3">
+            <widget class="QLineEdit" name="txtAmvalExitDate">
+             <property name="placeholderText">
+              <string>شمسی: 1405/07/18</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="4">
+            <widget class="QLabel" name="lblAmvalAcqDate">
+             <property name="text">
+              <string>تاریخ تحصیل (ACQ DATE):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="5">
+            <widget class="QLineEdit" name="txtAmvalAcqDate" />
+           </item>
+           <item row="2" column="6">
+            <widget class="QLabel" name="lblAmvalLoc">
+             <property name="text">
+              <string>محل (LOC):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="7">
+            <widget class="QLineEdit" name="txtAmvalLoc" />
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="lblAmvalBudget">
+             <property name="text">
+              <string>شماره بودجه:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="txtAmvalBudget" />
+           </item>
+           <item row="3" column="2">
+            <widget class="QLabel" name="lblAmvalNotes">
+             <property name="text">
+              <string>توضیحات:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="3" colspan="5">
+            <widget class="QPlainTextEdit" name="txtAmvalNotes">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>55</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>80</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="lblAmvalUnit">
+             <property name="text">
+              <string>واحد:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QComboBox" name="cmbAmvalUnit" />
+           </item>
+           <item row="4" column="2">
+            <widget class="QLabel" name="lblAmvalUnitCode">
+             <property name="text">
+              <string>کد واحد:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="3">
+            <widget class="QLineEdit" name="txtAmvalUnitCode">
+             <property name="placeholderText">
+              <string>مثال: 5121 = تعمیرات</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="4">
+            <widget class="QLabel" name="lblAmvalActive">
+             <property name="text">
+              <string>فعال / غیرفعال:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="5">
+            <widget class="QComboBox" name="cmbAmvalActive">
+             <item>
+              <property name="text">
+               <string>فعال</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>غیرفعال</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="4" column="6">
+            <widget class="QLabel" name="lblAmvalManUser">
+             <property name="text">
+              <string>استفاده‌کننده (MANUSERL):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="7">
+            <widget class="QLineEdit" name="txtAmvalManUser" />
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="lblAmvalCode">
+             <property name="text">
+              <string>کد (Code):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QLineEdit" name="txtAmvalCode" />
+           </item>
+           <item row="5" column="2">
+            <widget class="QLabel" name="lblAmvalCdVahed">
+             <property name="text">
+              <string>کد واحد (Cd_Vahed):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="3">
+            <widget class="QLineEdit" name="txtAmvalCdVahed" />
+           </item>
+           <item row="5" column="4">
+            <widget class="QLabel" name="lblAmvalRecorder">
+             <property name="text">
+              <string>ثبت‌کننده:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="5">
+            <widget class="QLineEdit" name="txtAmvalRecorder">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="6">
+            <widget class="QLabel" name="lblAmvalEditor">
+             <property name="text">
+              <string>ویرایشگر:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="7">
+            <widget class="QLineEdit" name="txtAmvalEditor">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayoutAmvalActions">
+          <item>
+           <widget class="QPushButton" name="btnAmvalNew">
+            <property name="text">
+             <string>مال جدید</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnAmvalSave">
+            <property name="text">
+             <string>ثبت اطلاعات</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnAmvalEdit">
+            <property name="text">
+             <string>ذخیره ویرایش</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnAmvalDelete">
+            <property name="text">
+             <string>حذف</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacerAmvalActions">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="tblAmvalList">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>250</height>
+           </size>
+          </property>
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+          </property>
+          <property name="rowCount">
+           <number>0</number>
+          </property>
+          <property name="columnCount">
+           <number>20</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>ردیف</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>شناسه</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>شماره اموال</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>شرح</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>کد محل</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>وضعیت</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>محل استفاده</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>شماره سریال</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>استفاده‌کننده</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>تاریخ ورود</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>تاریخ خروج</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>محل (LOC)</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>تاریخ تحصیل</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>شماره بودجه</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>توضیحات</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>واحد</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>کد</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>کد واحد</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>ثبت‌کننده</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>ویرایشگر</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabHotel">
+       <property name="layoutDirection">
+        <enum>Qt::LayoutDirection::RightToLeft</enum>
+       </property>
+       <attribute name="title">
+        <string>اتاق‌داری</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayoutHotel">
+        <item>
+         <widget class="QPushButton" name="btnBackHomeHotel">
+          <property name="minimumSize">
+           <size>
+            <width>170</width>
+            <height>36</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>بازگشت به صفحه اصلی</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTabWidget" name="hotelSections">
+          <property name="documentMode">
+           <bool>true</bool>
+          </property>
+          <property name="movable">
+           <bool>false</bool>
+          </property>
+          <property name="tabPosition">
+           <enum>QTabWidget::North</enum>
+          </property>
+          <widget class="QWidget" name="hotelRoomsPage">
+           <layout class="QVBoxLayout" name="hotelRoomsPageLayout">
+            <property name="leftMargin">
+             <number>8</number>
+            </property>
+            <property name="topMargin">
+             <number>8</number>
+            </property>
+            <property name="rightMargin">
+             <number>8</number>
+            </property>
+            <property name="bottomMargin">
+             <number>8</number>
+            </property>
+            <property name="spacing">
+             <number>8</number>
+            </property>
+            <item>
+             <widget class="QGroupBox" name="groupHotelSummary">
+              <property name="title">
+               <string>وضعیت کلی اقامتگاه</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayoutHotelSummary">
+               <item row="0" column="0">
+                <widget class="QLabel" name="lblHotelLaleh">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>34</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>لاله: ۲۴ اتاق</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignmentFlag::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QLabel" name="lblHotelLian">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>34</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>لیان: ۶ سوئیت</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignmentFlag::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="2">
+                <widget class="QLabel" name="lblHotelVacant">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>34</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>اتاق خالی: —</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignmentFlag::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="lblHotelOccupied">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>34</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>اتاق اشغال: —</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignmentFlag::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLabel" name="lblHotelArrivals">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>34</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>ورود امروز: —</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignmentFlag::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="2">
+                <widget class="QLabel" name="lblHotelDepartures">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>34</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>خروج امروز: —</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignmentFlag::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupHotelRooms">
+              <property name="title">
+               <string>وضعیت اتاق‌ها و سوئیت‌ها</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayoutHotelRooms">
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayoutHotelBuilding">
+                 <item>
+                  <widget class="QPushButton" name="btnHotelLaleh">
+                   <property name="text">
+                    <string>ساختمان لاله</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnHotelLian">
+                   <property name="text">
+                    <string>ساختمان لیان</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnHotelAll">
+                   <property name="text">
+                    <string>همه اتاق‌ها</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QScrollArea" name="hotelRoomScroll">
+                 <property name="widgetResizable">
+                  <bool>true</bool>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>300</height>
+                  </size>
+                 </property>
+                 <widget class="QWidget" name="hotelRoomCardsHost">
+                  <layout class="QGridLayout" name="hotelRoomCardsLayout">
+                   <property name="leftMargin">
+                    <number>6</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>6</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>6</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>6</number>
+                   </property>
+                   <property name="spacing">
+                    <number>10</number>
+                   </property>
+                  </layout>
+                 </widget>
+                </widget>
+               </item>
+               <item>
+                <widget class="QTableWidget" name="tblHotelRooms">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>175</height>
+                  </size>
+                 </property>
+                 <property name="alternatingRowColors">
+                  <bool>true</bool>
+                 </property>
+                 <property name="selectionBehavior">
+                  <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+                 </property>
+                 <property name="selectionMode">
+                  <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+                 </property>
+                 <property name="editTriggers">
+                  <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+                 </property>
+                 <property name="columnCount">
+                  <number>8</number>
+                 </property>
+                 <property name="rowCount">
+                  <number>0</number>
+                 </property>
+                 <column>
+                  <property name="text">
+                   <string>ساختمان</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>اتاق / سوئیت</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>وضعیت</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>نام مهمان</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>تعداد نفرات</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>ورود</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>خروج</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>مدت اقامت</string>
+                  </property>
+                 </column>
+                 <property name="visible">
+                  <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+           <attribute name="title">
+            <string>وضعیت اتاق‌ها</string>
+           </attribute>
+          </widget>
+          <widget class="QWidget" name="hotelReceptionPage">
+           <layout class="QVBoxLayout" name="hotelReceptionPageLayout">
+            <property name="leftMargin">
+             <number>8</number>
+            </property>
+            <property name="topMargin">
+             <number>8</number>
+            </property>
+            <property name="rightMargin">
+             <number>8</number>
+            </property>
+            <property name="bottomMargin">
+             <number>8</number>
+            </property>
+            <property name="spacing">
+             <number>8</number>
+            </property>
+            <item>
+             <widget class="QGroupBox" name="groupHotelGuestForm">
+              <property name="title">
+               <string>ثبت اقامت مهمان</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayoutHotelGuestForm">
+               <item row="0" column="0">
+                <widget class="QLabel" name="lblHotelNational">
+                 <property name="text">
+                  <string>کد ملی:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QComboBox" name="cmbHotelNational" />
+               </item>
+               <item row="0" column="2">
+                <widget class="QLabel" name="lblHotelFirstName">
+                 <property name="text">
+                  <string>نام:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="3">
+                <widget class="QLineEdit" name="txtHotelFirstName" />
+               </item>
+               <item row="0" column="4">
+                <widget class="QLabel" name="lblHotelLastName">
+                 <property name="text">
+                  <string>نام خانوادگی:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="5">
+                <widget class="QLineEdit" name="txtHotelLastName" />
+               </item>
+               <item row="0" column="6">
+                <widget class="QLabel" name="lblHotelOrg">
+                 <property name="text">
+                  <string>سازمان:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="7">
+                <widget class="QComboBox" name="cmbHotelOrg" />
+               </item>
+               <item row="0" column="8">
+                <widget class="QLabel" name="lblHotelPeople">
+                 <property name="text">
+                  <string>تعداد نفرات:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="9">
+                <widget class="QLineEdit" name="txtHotelPeople" />
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="lblHotelBuilding">
+                 <property name="text">
+                  <string>ساختمان:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QComboBox" name="cmbHotelBuilding" />
+               </item>
+               <item row="1" column="2">
+                <widget class="QLabel" name="lblHotelRoom">
+                 <property name="text">
+                  <string>اتاق / سوئیت:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="3">
+                <widget class="QComboBox" name="cmbHotelRoom" />
+               </item>
+               <item row="1" column="4">
+                <widget class="QLabel" name="lblHotelArrival">
+                 <property name="text">
+                  <string>تاریخ ورود برنامه‌ریزی‌شده:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="5">
+                <widget class="QLineEdit" name="txtHotelArrival">
+                 <property name="placeholderText">
+                  <string>شمسی: 1405/07/18</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="6">
+                <widget class="QLabel" name="lblHotelDeparture">
+                 <property name="text">
+                  <string>تاریخ خروج برنامه‌ریزی‌شده:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="7">
+                <widget class="QLineEdit" name="txtHotelDeparture">
+                 <property name="placeholderText">
+                  <string>شمسی: 1405/07/18</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="8">
+                <widget class="QLabel" name="lblHotelEmployee">
+                 <property name="text">
+                  <string>کد پرسنلی:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="9">
+                <widget class="QLineEdit" name="txtHotelEmployee" />
+               </item>
+               <item row="2" column="0" colspan="2">
+                <widget class="QCheckBox" name="chkHotelBreakfast">
+                 <property name="text">
+                  <string>صبحانه</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="2" colspan="2">
+                <widget class="QCheckBox" name="chkHotelLunch">
+                 <property name="text">
+                  <string>ناهار</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="4" colspan="2">
+                <widget class="QCheckBox" name="chkHotelDinner">
+                 <property name="text">
+                  <string>شام</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="2" colspan="1">
+                <widget class="QLabel" name="lblHotelActualArrival">
+                 <property name="text">
+                  <string>ورود واقعی</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="3" colspan="1">
+                <widget class="QLineEdit" name="txtHotelActualArrival">
+                 <property name="toolTip">
+                  <string>تاریخ واقعی ورود مهمان؛ خالی بماند تا تاریخ امروز ثبت شود.</string>
+                 </property>
+                 <property name="placeholderText">
+                  <string>شمسی: 1405/07/18</string>
+                 </property>
+                 <property name="placeholderText">
+                  <string>شمسی: 1405/07/18</string>
+                 </property>
+                 <property name="clearButtonEnabled">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="2" colspan="1">
+                <widget class="QLabel" name="lblHotelActualDeparture">
+                 <property name="text">
+                  <string>خروج واقعی</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="3" colspan="1">
+                <widget class="QLineEdit" name="txtHotelActualDeparture">
+                 <property name="toolTip">
+                  <string>تاریخ واقعی خروج؛ فقط پس از ثبت ورود واقعی قابل ثبت است.</string>
+                 </property>
+                 <property name="placeholderText">
+                  <string>شمسی: 1405/07/18</string>
+                 </property>
+                 <property name="placeholderText">
+                  <string>شمسی: 1405/07/18</string>
+                 </property>
+                 <property name="clearButtonEnabled">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayoutHotelActions">
+              <item>
+               <widget class="QPushButton" name="btnHotelNew">
+                <property name="text">
+                 <string>مهمان جدید</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnHotelEdit">
+                <property name="text">
+                 <string>ویرایش اقامت</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnHotelExtendStay">
+                <property name="toolTip">
+                 <string>تمدید تاریخ خروج مورد انتظار مهمان ساکن؛ تاریخ خروج واقعی تغییر نمی‌کند.</string>
+                </property>
+                <property name="text">
+                 <string>تمدید اقامت</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnHotelSave">
+                <property name="text">
+                 <string>ثبت اقامت</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnHotelCheckIn">
+                <property name="toolTip">
+                 <string>ثبت تاریخ واقعی ورود مهمان انتخاب‌شده</string>
+                </property>
+                <property name="text">
+                 <string>ثبت ورود واقعی</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnHotelCheckOut">
+                <property name="toolTip">
+                 <string>ثبت تاریخ واقعی خروج مهمان انتخاب‌شده؛ ابتدا ورود باید ثبت شده باشد</string>
+                </property>
+                <property name="text">
+                 <string>ثبت خروج واقعی</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnHotelRefresh">
+                <property name="text">
+                 <string>بروزرسانی</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+           <attribute name="title">
+            <string>پذیرش و رزرو</string>
+           </attribute>
+          </widget>
+          <widget class="QWidget" name="hotelMovementsPage">
+           <layout class="QVBoxLayout" name="hotelMovementsPageLayout">
+            <property name="leftMargin">
+             <number>8</number>
+            </property>
+            <property name="topMargin">
+             <number>8</number>
+            </property>
+            <property name="rightMargin">
+             <number>8</number>
+            </property>
+            <property name="bottomMargin">
+             <number>8</number>
+            </property>
+            <property name="spacing">
+             <number>8</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="lblHotelMovementInfo">
+              <property name="text">
+               <string>ورودها و خروج‌های برنامه‌ریزی‌شده امروز؛ برای ثبت ورود یا خروج، ردیف مهمان را انتخاب کنید.</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QTableWidget" name="tblHotelToday">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>250</height>
+               </size>
+              </property>
+              <property name="columnCount">
+               <number>7</number>
+              </property>
+              <property name="rowCount">
+               <number>0</number>
+              </property>
+              <column>
+               <property name="text">
+                <string>شناسه</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>عملیات</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>ساختمان</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>اتاق</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>نام مهمان</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>نفرات</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>تاریخ برنامه‌ریزی‌شده</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+           <attribute name="title">
+            <string>ورود و خروج امروز</string>
+           </attribute>
+          </widget>
+          <widget class="QWidget" name="hotelHistoryPage">
+           <layout class="QVBoxLayout" name="hotelHistoryPageLayout">
+            <property name="leftMargin">
+             <number>8</number>
+            </property>
+            <property name="topMargin">
+             <number>8</number>
+            </property>
+            <property name="rightMargin">
+             <number>8</number>
+            </property>
+            <property name="bottomMargin">
+             <number>8</number>
+            </property>
+            <property name="spacing">
+             <number>8</number>
+            </property>
+            <item>
+             <widget class="QGroupBox" name="groupHotelHistory">
+              <property name="title">
+               <string>سوابق اقامت (اطلاعات حذف نمی‌شود)</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayoutHotelHistory">
+               <item>
+                <widget class="QTableWidget" name="tblHotelHistory">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>150</height>
+                  </size>
+                 </property>
+                 <property name="alternatingRowColors">
+                  <bool>true</bool>
+                 </property>
+                 <property name="selectionBehavior">
+                  <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+                 </property>
+                 <property name="selectionMode">
+                  <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+                 </property>
+                 <property name="editTriggers">
+                  <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+                 </property>
+                 <property name="columnCount">
+                  <number>11</number>
+                 </property>
+                 <property name="rowCount">
+                  <number>0</number>
+                 </property>
+                 <column>
+                  <property name="text">
+                   <string>شناسه</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>نام مهمان</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>کد ملی</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>ساختمان</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>اتاق</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>نفرات</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>ورود برنامه‌ریزی‌شده</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>خروج برنامه‌ریزی‌شده</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>ورود واقعی</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>خروج واقعی</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>مدت اقامت</string>
+                  </property>
+                 </column>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayoutHotelSearch">
+              <item>
+               <widget class="QLabel" name="lblHotelSearch">
+                <property name="text">
+                 <string>جستجوی سوابق:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="txtHotelSearch">
+                <property name="placeholderText">
+                 <string>نام، نام خانوادگی، کد ملی، سازمان یا اتاق...</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+           <attribute name="title">
+            <string>سوابق اقامت</string>
+           </attribute>
+          </widget>
+          <property name="styleSheet">
+           <string>QTabBar::tab { min-height: 42px; padding: 7px 18px; font-family: "B Nazanin"; font-size: 13pt; font-weight: bold; }</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+       <property name="styleSheet">
+        <string>QGroupBox { font-family: "B Nazanin"; font-size: 12pt; font-weight: bold; border: 1px solid #D6DEE8; border-radius: 8px; margin-top: 12px; padding-top: 10px; } QGroupBox::title { subcontrol-origin: margin; right: 12px; padding: 0 6px; } QLineEdit, QComboBox { min-height: 32px; padding: 3px 7px; border: 1px solid #C7D2DF; border-radius: 5px; } QTableWidget { gridline-color: #E3E8EF; alternate-background-color: #F5F8FC; selection-background-color: #D7E9FA; selection-color: #17324D; } QPushButton#hotelRoomCardButton { min-width: 155px; min-height: 128px; max-width: 280px; text-align: center; border: 1px solid #C9CED4; border-radius: 10px; padding: 9px; font-family: "B Nazanin"; font-size: 11pt; font-weight: bold; } QPushButton#hotelRoomCardButton[roomStatus="خالی"] { background: #F0F9F3; border-color: #8CC9A0; color: #21864B; } QPushButton#hotelRoomCardButton[roomStatus="اشغال"] { background: #FFF3F1; border-color: #E6A39B; color: #B9382B; } QPushButton#hotelRoomCardButton[roomStatus="رزرو"] { background: #FFF7E8; border-color: #E7C078; color: #996515; } QPushButton#hotelRoomCardButton[roomStatus="سایر"] { background: #F1F3F5; border-color: #C9CED4; color: #667085; } QPushButton#hotelRoomCardButton:hover { border-width: 2px; }</string>
+       </property>
+      </widget>
+      <widget class="QWidget" name="tabAnbarTahrir">
+       <property name="layoutDirection">
+        <enum>Qt::LayoutDirection::RightToLeft</enum>
+       </property>
+       <attribute name="title">
+        <string>انبار لوازم‌التحریر</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayoutAnbarTahrir">
+        <item alignment="Qt::AlignmentFlag::AlignRight">
+         <widget class="QPushButton" name="btnBackHomeAnbarTahrir">
+          <property name="text">
+           <string>خروج از این تب</string>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>170</width>
+            <height>36</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupAnbarTahrirSearch">
+          <property name="title">
+           <string>جستجو و اطلاعات کالا</string>
+          </property>
+          <layout class="QGridLayout" name="gridAnbarTahrirSearch">
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblAnbarTahrirSearch">
+             <property name="text">
+              <string>جستجو:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1" colspan="3">
+            <widget class="QLineEdit" name="txtAnbarTahrirSearch">
+             <property name="placeholderText">
+              <string>شرح کالا یا واحد...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblAnbarTahrirDescription">
+             <property name="text">
+              <string>شرح کالا:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="txtAnbarTahrirDescription">
+             <property name="placeholderText">
+              <string>مثلاً خودکار، کاغذ، پوشه...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="lblAnbarTahrirQty">
+             <property name="text">
+              <string>موجودی:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QLineEdit" name="txtAnbarTahrirQty">
+             <property name="placeholderText">
+              <string>تعداد موجود</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QLabel" name="lblAnbarTahrirUnit">
+             <property name="text">
+              <string>واحد:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QLineEdit" name="txtAnbarTahrirUnit">
+             <property name="placeholderText">
+              <string>عدد، بسته، کارتن...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayoutAnbarTahrirActions">
+          <item>
+           <widget class="QPushButton" name="btnAnbarTahrirNew">
+            <property name="text">
+             <string>کالای جدید</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnAnbarTahrirSave">
+            <property name="text">
+             <string>ثبت</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnAnbarTahrirEdit">
+            <property name="text">
+             <string>ذخیره ویرایش</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnAnbarTahrirDelete">
+            <property name="text">
+             <string>حذف</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnAnbarTahrirRefresh">
+            <property name="text">
+             <string>بازخوانی</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="tblAnbarTahrirList">
+          <property name="columnCount">
+           <number>4</number>
+          </property>
+          <property name="rowCount">
+           <number>0</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>ردیف</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>شرح کالا</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>موجودی</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>واحد</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabMtoTahrir">
+       <property name="layoutDirection">
+        <enum>Qt::LayoutDirection::RightToLeft</enum>
+       </property>
+       <attribute name="title">
+        <string>تقاضای لوازم‌التحریر</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayoutMtoTahrir">
+        <item alignment="Qt::AlignmentFlag::AlignRight">
+         <widget class="QPushButton" name="btnBackHomeMtoTahrir">
+          <property name="text">
+           <string>خروج از این تب</string>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>170</width>
+            <height>36</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupMtoTahrirFilters">
+          <property name="title">
+           <string>جستجو و فیلتر درخواست‌ها</string>
+          </property>
+          <layout class="QGridLayout" name="gridMtoTahrirFilters">
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblMtoTahrirSearch">
+             <property name="text">
+              <string>جستجو:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1" colspan="5">
+            <widget class="QLineEdit" name="txtMtoTahrirSearch">
+             <property name="placeholderText">
+              <string>جستجو در شرح کالا، ثبت‌کننده، واحد و سایر مشخصات...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblMtoTahrirFromDate">
+             <property name="text">
+              <string>از تاریخ:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="txtMtoTahrirFromDate">
+             <property name="placeholderText">
+              <string>شمسی: 1405/07/01</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="lblMtoTahrirToDate">
+             <property name="text">
+              <string>تا تاریخ:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QLineEdit" name="txtMtoTahrirToDate">
+             <property name="placeholderText">
+              <string>شمسی: 1405/07/30</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupMtoTahrirInfo">
+          <property name="title">
+           <string>اطلاعات درخواست</string>
+          </property>
+          <layout class="QGridLayout" name="gridMtoTahrirInfo">
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblMtoTahrirDate">
+             <property name="text">
+              <string>تاریخ شمسی:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="txtMtoTahrirDate">
+             <property name="placeholderText">
+              <string>مثلاً 1405/07/27</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="lblMtoTahrirDescription">
+             <property name="text">
+              <string>شرح کالا:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3" colspan="5">
+            <widget class="QLineEdit" name="txtMtoTahrirDescription">
+             <property name="placeholderText">
+              <string>شرح کالای درخواستی</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblMtoTahrirQty">
+             <property name="text">
+              <string>تعداد:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="txtMtoTahrirQty">
+             <property name="placeholderText">
+              <string>تعداد درخواستی</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="lblMtoTahrirUnit">
+             <property name="text">
+              <string>واحد:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QLineEdit" name="txtMtoTahrirUnit">
+             <property name="placeholderText">
+              <string>عدد، بسته...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QLabel" name="lblMtoTahrirVahed">
+             <property name="text">
+              <string>واحد سازمانی:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QComboBox" name="cmbMtoTahrirVahed">
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+             <property name="insertPolicy">
+              <enum>QComboBox::InsertPolicy::NoInsert</enum>
+             </property>
+             <property name="placeholderText">
+              <string>واحد سازمانی؛ از فهرست انتخاب کنید یا بنویسید</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="lblMtoTahrirRecorder">
+             <property name="text">
+              <string>ثبت‌کننده:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="txtMtoTahrirRecorder">
+             <property name="placeholderText">
+              <string>نام کاربر ثبت‌کننده</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QLabel" name="lblMtoTahrirTaeidkonandeh">
+             <property name="text">
+              <string>تأییدکننده:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="3">
+            <widget class="QComboBox" name="cmbMtoTahrirTaeidkonandeh">
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+             <property name="insertPolicy">
+              <enum>QComboBox::InsertPolicy::NoInsert</enum>
+             </property>
+             <property name="placeholderText">
+              <string>تأییدکننده؛ انتخاب یا ورود نام</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="4">
+            <widget class="QLabel" name="lblMtoTahrirEditor">
+             <property name="text">
+              <string>آخرین ویرایش:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="5">
+            <widget class="QLineEdit" name="txtMtoTahrirEditor">
+             <property name="placeholderText">
+              <string>نام ویرایش‌کننده</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="6">
+            <widget class="QLabel" name="lblMtoTahrirTahvilGirandeh">
+             <property name="text">
+              <string>تحویل‌گیرنده:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="7">
+            <widget class="QComboBox" name="cmbMtoTahrirTahvilgirandeh">
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+             <property name="insertPolicy">
+              <enum>QComboBox::InsertPolicy::NoInsert</enum>
+             </property>
+             <property name="placeholderText">
+              <string>نام تحویل‌گیرنده</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayoutMtoTahrirActions">
+          <item>
+           <widget class="QPushButton" name="btnMtoTahrirNew">
+            <property name="text">
+             <string>درخواست جدید</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnMtoTahrirSave">
+            <property name="text">
+             <string>ثبت درخواست</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnMtoTahrirEdit">
+            <property name="text">
+             <string>ذخیره ویرایش</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnMtoTahrirDelete">
+            <property name="text">
+             <string>حذف درخواست</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnMtoTahrirDeliver">
+            <property name="text">
+             <string>ثبت تحویل</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnMtoTahrirRefresh">
+            <property name="text">
+             <string>بازخوانی</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="tblMtoTahrirList">
+          <property name="columnCount">
+           <number>9</number>
+          </property>
+          <property name="rowCount">
+           <number>0</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>ردیف</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>تاریخ</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>شرح کالا</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>تعداد</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>واحد</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>واحد سازمانی</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>ثبت‌کننده</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>تأییدکننده</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>تحویل‌گیرنده</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1200</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuSystem">
+    <property name="title">
+     <string>سیستم</string>
+    </property>
+    <addaction name="actionHome" />
+    <addaction name="actionPassword" />
+    <addaction name="separator" />
+    <addaction name="actionExit" />
+   </widget>
+   <widget class="QMenu" name="menuUsers">
+    <property name="title">
+     <string>کاربران</string>
+    </property>
+    <addaction name="actionUserManagement" />
+   </widget>
+   <widget class="QMenu" name="menuRepairs">
+    <property name="title">
+     <string>تعمیرات</string>
+    </property>
+    <addaction name="actionRepairsRequest" />
+    <addaction name="actionRepairsHistory" />
+   </widget>
+   <widget class="QMenu" name="menuEquipment">
+    <property name="title">
+     <string>تجهیزات و اموال</string>
+    </property>
+    <addaction name="actionEquipmentList" />
+    <addaction name="actionAssets" />
+   </widget>
+   <widget class="QMenu" name="menuStationery">
+    <property name="title">
+     <string>لوازم‌التحریر</string>
+    </property>
+    <addaction name="actionAnbarTahrir" />
+    <addaction name="actionMtoTahrir" />
+   </widget>
+   <widget class="QMenu" name="menuReports">
+    <property name="title">
+     <string>گزارش‌ها</string>
+    </property>
+    <addaction name="actionReportRepairs" />
+    <addaction name="actionReportEquipment" />
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>راهنما</string>
+    </property>
+    <addaction name="actionAbout" />
+   </widget>
+   <addaction name="menuSystem" />
+   <addaction name="menuUsers" />
+   <addaction name="menuRepairs" />
+   <addaction name="menuEquipment" />
+   <addaction name="menuStationery" />
+   <addaction name="menuReports" />
+   <addaction name="menuHelp" />
+  </widget>
+  <widget class="QStatusBar" name="statusBar">
+   <widget class="QLabel" name="lblStatusUser">
+    <property name="minimumSize">
+    <size>
+     <width>145</width>
+     <height>27</height>
+    </size>
+   </property>
+   <property name="text">
+     <string>کاربر: —</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblStatusUnit">
+    <property name="minimumSize">
+    <size>
+     <width>165</width>
+     <height>27</height>
+    </size>
+   </property>
+   <property name="text">
+     <string>واحد: —</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblStatusSecurity">
+    <property name="minimumSize">
+    <size>
+     <width>135</width>
+     <height>27</height>
+    </size>
+   </property>
+   <property name="text">
+     <string>نوع کاربر: —</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblStatusLevel">
+    <property name="minimumSize">
+    <size>
+     <width>125</width>
+     <height>27</height>
+    </size>
+   </property>
+   <property name="text">
+     <string>سطح دسترسی: —</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblStatusWeekday">
+    <property name="minimumSize">
+    <size>
+     <width>85</width>
+     <height>27</height>
+    </size>
+   </property>
+   <property name="text">
+     <string>روز هفته</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblStatusDate">
+    <property name="minimumSize">
+    <size>
+     <width>105</width>
+     <height>27</height>
+    </size>
+   </property>
+   <property name="text">
+     <string>1405/07/24</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblStatusTime">
+    <property name="minimumSize">
+    <size>
+     <width>100</width>
+     <height>27</height>
+    </size>
+   </property>
+   <property name="text">
+     <string>00:00:00</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+  </widget>
+  <action name="actionHome">
+   <property name="text">
+    <string>صفحه اصلی</string>
+   </property>
+  </action>
+  <action name="actionPassword">
+   <property name="text">
+    <string>تغییر رمز عبور</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>خروج</string>
+   </property>
+  </action>
+  <action name="actionUserManagement">
+   <property name="text">
+    <string>مدیریت کاربران</string>
+   </property>
+  </action>
+  <action name="actionRepairsRequest">
+   <property name="text">
+    <string>ثبت کار تعمیراتی</string>
+   </property>
+  </action>
+  <action name="actionRepairsHistory">
+   <property name="text">
+    <string>سوابق تعمیرات</string>
+   </property>
+  </action>
+  <action name="actionEquipmentList">
+   <property name="text">
+    <string>فهرست تجهیزات</string>
+   </property>
+  </action>
+  <action name="actionAssets">
+   <property name="text">
+    <string>اموال</string>
+   </property>
+  </action>
+  <action name="actionReportRepairs">
+   <property name="text">
+    <string>گزارش تعمیرات</string>
+   </property>
+  </action>
+  <action name="actionReportEquipment">
+   <property name="text">
+    <string>گزارش تجهیزات</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>درباره برنامه</string>
+   </property>
+  </action>
+
+  <action name="actionAnbarTahrir">
+  <property name="text">
+   <string>انبار لوازم‌التحریر</string>
+  </property>
+  </action>
+
+  <action name="actionMtoTahrir">
+  <property name="text">
+   <string>تقاضای لوازم‌التحریر</string>
+  </property>
+  </action>
+ </widget>
+ <resources />
+ <connections />
+</ui>

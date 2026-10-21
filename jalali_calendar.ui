@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<ui version="4.0">
+ <class>JalaliCalendarDialog</class>
+ <widget class="QDialog" name="JalaliCalendarDialog">
+  <property name="windowTitle">
+   <string>انتخاب تاریخ شمسی</string>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>350</width>
+    <height>260</height>
+   </size>
+  </property>
+  <property name="layoutDirection">
+   <enum>Qt::LayoutDirection::RightToLeft</enum>
+  </property>
+  <property name="styleSheet">
+   <string>QDialog { background: white; border: 1px solid #9AA8B7; }
+QPushButton { min-width: 32px; min-height: 30px; padding: 3px; }
+QPushButton:hover { background: #DCEBFA; }
+QLabel#month_label { font-weight: bold; font-size: 14pt; }
+QLabel[weekdayHeader="true"] { font-weight: bold; color: #245B87; }
+QPushButton[calendarToday="true"] { background: #1976D2; color: white; font-weight: bold; }</string>
+  </property>
+  <layout class="QVBoxLayout" name="rootLayout">
+   <property name="leftMargin">
+    <number>10</number>
+   </property>
+   <property name="topMargin">
+    <number>10</number>
+   </property>
+   <property name="rightMargin">
+    <number>10</number>
+   </property>
+   <property name="bottomMargin">
+    <number>10</number>
+   </property>
+   <property name="spacing">
+    <number>8</number>
+   </property>
+   <item>
+    <layout class="QHBoxLayout" name="navigationLayout">
+     <item>
+      <widget class="QPushButton" name="prev_button">
+       <property name="text">
+        <string>ماه قبل ◀</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="month_label">
+       <property name="text">
+        <string>ماه و سال</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignmentFlag::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="next_button">
+       <property name="text">
+        <string>▶ ماه بعد</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="days_grid">
+     <property name="spacing">
+      <number>4</number>
+     </property>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="bottomLayout">
+     <item>
+      <widget class="QPushButton" name="today_button">
+       <property name="text">
+        <string>امروز</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="clear_button">
+       <property name="text">
+        <string>پاک کردن</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources />
+ <connections />
+</ui>

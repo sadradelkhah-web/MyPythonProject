@@ -1,0 +1,160 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<ui version="4.0">
+ <class>UserPermissionsDialog</class>
+ <widget class="QDialog" name="UserPermissionsDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>440</width>
+    <height>520</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>تعیین مجوز دسترسی کاربر</string>
+  </property>
+  <property name="layoutDirection">
+   <enum>Qt::RightToLeft</enum>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="lblSelectedUser">
+     <property name="text">
+      <string>مجوزهای کاربر انتخاب‌شده</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-weight: bold; font-size: 14px;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QComboBox" name="cmbUsers">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>34</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="grpPermissions">
+     <property name="title">
+      <string>اجازه مشاهده تب‌ها</string>
+     </property>
+     <layout class="QVBoxLayout" name="permissionsLayout">
+      <item>
+       <widget class="QCheckBox" name="chkTabHome">
+        <property name="text">
+         <string>صفحه اصلی</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkTabKar">
+        <property name="text">
+         <string>ثبت درخواست‌ها</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkTabReport">
+        <property name="text">
+         <string>گزارش‌ها</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkTabChangePassword">
+        <property name="text">
+         <string>تغییر رمز عبور</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkTabAmval">
+        <property name="text">
+         <string>اموال</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkTabHotel">
+        <property name="text">
+         <string>اتاق‌داری مهمانسرا</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkTabAnbarTahrir">
+        <property name="text">
+         <string>انبار لوازم‌التحریر</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkTabMtoTahrir">
+        <property name="text">
+         <string>تقاضای لوازم‌التحریر</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkTabMesc">
+        <property name="text">
+         <string>مشخصات کالا (فقط SuperAdmin)</string>
+        </property>
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkTabUserManagement">
+        <property name="text">
+         <string>مدیریت کاربران (فقط SuperAdmin)</string>
+        </property>
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="buttonsLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnSavePermissions">
+       <property name="text">
+        <string>ذخیره مجوزها</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnCancelPermissions">
+       <property name="text">
+        <string>انصراف</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources />
+ <connections />
+</ui>

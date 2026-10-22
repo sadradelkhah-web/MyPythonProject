@@ -2,7 +2,7 @@ import re
 import jdatetime
 from datetime import datetime, date as py_date
 
-from PySide6.QtCore import QDate, QDateTime, QTimer, Qt, QStringListModel
+from PySide6.QtCore import QDate, QDateTime, QTimer, Qt, QStringListModel, Signal
 from PySide6.QtGui import QAction, QFont, QIcon, QPainter, QPen, QPixmap, QColor, QTextDocument
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrintPreviewDialog
 from PySide6.QtWidgets import (
@@ -47,6 +47,14 @@ PERSIAN_MONTHS = [
     "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
 ]
 PERSIAN_WEEKDAYS = ["ش", "ی", "د", "س", "چ", "پ", "ج"]
+
+
+class HotelRoomCardButton(QPushButton):
+    doubleClicked = Signal()
+
+    def mouseDoubleClickEvent(self, event):
+        self.doubleClicked.emit()
+        super().mouseDoubleClickEvent(event)
 
 
 class JalaliCalendarDialog(QDialog):
@@ -1879,7 +1887,7 @@ class MainWindow(QMainWindow):
         for widget_name, aliases in (("chkHotelBreakfast", ("sobhmanne", "breakfast")), ("chkHotelLunch", ("nahar", "lunch")), ("chkHotelDinner", ("sham", "dinner"))):
             col = self._hotel_pick(row, *aliases)
             if col:
-                getattr(self.ui, widget_name).setChecked(self._hotel_bool(row.get(col), False))
+                getattr(self.ui, widget_name).setValue(self._hotel_meal_count(row.get(col)))
         self._hotel_loading_guest_form = False
 
     def _hotel_load_today_movements(self):
@@ -1913,6 +1921,17 @@ class MainWindow(QMainWindow):
                 for col, value in enumerate(values):
                     table.setItem(idx, col, QTableWidgetItem(format_numeric_display(value)))
                 table.item(idx, 0).setData(Qt.ItemDataRole.UserRole, row.get(id_col) if id_col else None)
+
+    @staticmethod
+    def _hotel_meal_count(value):
+        if value is None:
+            return 0
+        if isinstance(value, bool):
+            return 1 if value else 0
+        try:
+            return max(0, int(float(value)))
+        except (TypeError, ValueError):
+            return 1 if str(value).strip().casefold() in ("بله", "yes", "true") else 0
 
     @staticmethod
     def _hotel_today_jalali():
@@ -2079,7 +2098,7 @@ class MainWindow(QMainWindow):
             for n in range(1, 5):
                 rooms.append(("لاله", f"{section}{n}", 3))
         for suite in "ABCDEF":
-            rooms.append(("لیان", suite, 2))
+            rooms.append(("لیان", suite, 3))
         return rooms
 
     def _hotel_refresh_org_combo(self):
@@ -2203,7 +2222,8 @@ class MainWindow(QMainWindow):
                 else:
                     complete_rooms.append({
                         "ID": None, "build": b, "namOtagh": r,
-                        "Status": "فعال", "empty": True, "_display_only": True,
+                        "Status": "فعال", "empty": True, "Capacity": 3,
+                        "_display_only": True,
                     })
             self._hotel_rooms = complete_rooms
             self._hotel_guests = guest_rows
@@ -2271,49 +2291,75 @@ class MainWindow(QMainWindow):
             return True
         return default
 
-    def _hotel_current_guest(self, building, room):
-        """مهمان جاری اتاق را بدون اتکا به فیلد empty تشخیص می‌دهد.
-
-        معیارهای اشغال:
-        1) ورود واقعی ثبت شده و خروج واقعی ثبت نشده؛ یا
-        2) امروز داخل بازه ورود/خروج برنامه‌ریزی‌شده است و خروج واقعی ثبت نشده.
-        تاریخ‌های Number اکسس مثل 14050722 و 14050722.0 به یک قالب تبدیل می‌شوند.
-        """
+    def _hotel_current_guests(self, building, room):
+        """تمام رکوردهای خانوادگی حاضر یا دارای اقامت معتبر امروز را برمی‌گرداند."""
         today = self._hotel_date_db(self._hotel_today_jalali())
-        actual_candidates = []
-        date_candidates = []
+        active = []
         for row in self._hotel_guests:
             if not self._hotel_same_building(self._hotel_building_name(row), building):
                 continue
             if not self._hotel_same_room(self._hotel_guest_room(row), room):
                 continue
-
-            out_col = self._hotel_pick(row, "tarikhOut", "actualcheckout", "تاریخ خروج واقعی")
-            in_col = self._hotel_pick(row, "TarikhIn", "actualcheckin", "تاریخ ورود واقعی")
+            out_col = self._hotel_pick(row, "tarikhOut", "actualcheckout", "تاریخ خروج واقعی", "تاریخ out")
+            in_col = self._hotel_pick(row, "TarikhIn", "actualcheckin", "تاریخ این")
             arr_col = self._hotel_pick(row, "TarikhVorod", "arrival", "تاریخ ورود")
             dep_col = self._hotel_pick(row, "TarikhKhoroj", "departure", "تاریخ خروج")
-
-            actual_out = self._hotel_date_db(row.get(out_col)) if out_col else None
-            actual_in = self._hotel_date_db(row.get(in_col)) if in_col else None
-            # خروج واقعی ثبت شده یعنی این اقامت خاتمه یافته و نباید اتاق را اشغال کند.
-            if actual_out:
+            if out_col and row.get(out_col):
                 continue
-
-            if actual_in:
-                actual_candidates.append((actual_in, row))
+            if in_col and row.get(in_col):
+                active.append(row)
                 continue
-
             planned_in = self._hotel_date_db(row.get(arr_col)) if arr_col else None
             planned_out = self._hotel_date_db(row.get(dep_col)) if dep_col else None
             if today and planned_in and planned_out and planned_in <= today <= planned_out:
-                date_candidates.append((planned_in, planned_out, row))
+                active.append(row)
+        return active
 
-        # ورود واقعی بر رکورد صرفاً برنامه‌ریزی‌شده اولویت دارد.
-        if actual_candidates:
-            return sorted(actual_candidates, key=lambda item: item[0], reverse=True)[0][1]
-        if date_candidates:
-            return sorted(date_candidates, key=lambda item: (item[0], item[1]), reverse=True)[0][2]
-        return None
+    def _hotel_current_guest(self, building, room):
+        """برای سازگاری با قسمت‌هایی که فقط یک رکورد نمونه لازم دارند."""
+        guests = self._hotel_current_guests(building, room)
+        return guests[0] if guests else None
+
+    def _hotel_room_capacity(self, room_row):
+        col = self._hotel_pick(room_row, "Capacity", "capacity")
+        try:
+            return max(1, int(float(room_row.get(col)))) if col and room_row.get(col) not in (None, "") else 3
+        except (TypeError, ValueError):
+            return 3
+
+    def _hotel_room_occupied_people(self, building, room, arrival=None, departure=None, exclude_id=None):
+        """جمع افراد گروه‌هایی که تاریخ اقامتشان با بازه موردنظر هم‌پوشانی دارد."""
+        new_start = self._hotel_date_db(arrival) if arrival else self._hotel_date_db(self._hotel_today_jalali())
+        new_end = self._hotel_date_db(departure) if departure else new_start
+        total = 0
+        for row in self._hotel_guests:
+            if not self._hotel_same_building(self._hotel_building_name(row), building) or not self._hotel_same_room(self._hotel_guest_room(row), room):
+                continue
+            id_col = self._hotel_pick(row, "ID", "id")
+            if exclude_id is not None and id_col and str(row.get(id_col)) == str(exclude_id):
+                continue
+            out_col = self._hotel_pick(row, "tarikhOut", "actualcheckout", "تاریخ out")
+            if out_col and row.get(out_col):
+                continue
+            arr_col = self._hotel_pick(row, "TarikhVorod", "arrival", "تاریخ ورود")
+            dep_col = self._hotel_pick(row, "TarikhKhoroj", "departure", "تاریخ خروج")
+            old_start = self._hotel_date_db(row.get(arr_col)) if arr_col else None
+            old_end = self._hotel_date_db(row.get(dep_col)) if dep_col else None
+            if not old_start or not old_end:
+                in_col = self._hotel_pick(row, "TarikhIn", "actualcheckin", "تاریخ این")
+                old_start = self._hotel_date_db(row.get(in_col)) if in_col and row.get(in_col) else None
+                old_end = new_end
+            if old_start and old_end and new_start and new_end and old_start <= new_end and new_start <= old_end:
+                people_col = self._hotel_pick(row, "TedadAfrad", "people", "تعداد افراد")
+                try:
+                    total += max(1, int(float(row.get(people_col) or 1))) if people_col else 1
+                except (TypeError, ValueError):
+                    total += 1
+        return total
+
+    def _hotel_has_date_overlap(self, building, room, arrival, departure):
+        # چند خانواده می‌توانند هم‌زمان در یک اتاق باشند؛ کنترل اصلی با ظرفیت انجام می‌شود.
+        return False
 
     def _hotel_has_date_overlap(self, building, room, arrival, departure):
         new_arrival = self._hotel_date_db(arrival)
@@ -2361,7 +2407,8 @@ class MainWindow(QMainWindow):
             active = self._hotel_text(room_row.get(status_col)) if status_col else "فعال"
             empty_col = self._hotel_pick(room_row, "empty")
             empty_value = self._hotel_bool(room_row.get(empty_col), default=True) if empty_col else True
-            guest = self._hotel_current_guest(building, room)
+            current_groups = self._hotel_current_guests(building, room)
+            guest = current_groups[0] if current_groups else None
             reservation = None
             today_digits = self._hotel_date_db(self._hotel_today_jalali()) or ""
 
@@ -2414,7 +2461,7 @@ class MainWindow(QMainWindow):
             # اگر امروز بین تاریخ ورود و خروج است، اتاق قطعاً پر است؛
             # این شرط عمداً بر empty=True غلبه می‌کند.
             # منبع معتبر وضعیت اتاق، بازه اقامت و تاریخ‌های واقعی در tblHotel است؛ فیلد empty نادیده گرفته می‌شود.
-            occupied = guest is not None
+            occupied = bool(current_groups) or guest is not None
             if occupied:
                 status = "اشغال"
             elif reservation:
@@ -2432,8 +2479,23 @@ class MainWindow(QMainWindow):
             planned_out = self._hotel_text(display_guest.get(dep_col)) if display_guest and dep_col else ""
             actual_in = self._hotel_text(display_guest.get(actual_in_col)) if display_guest and actual_in_col else ""
             actual_out = self._hotel_text(display_guest.get(actual_out_col)) if display_guest and actual_out_col else ""
-            guest_name = " ".join(x for x in (self._hotel_text(display_guest.get(name_col)) if display_guest and name_col else "", self._hotel_text(display_guest.get(family_col)) if display_guest and family_col else "") if x)
-            values = [building, room, status, guest_name, self._hotel_text(display_guest.get(people_col)) if display_guest and people_col else "", actual_in or planned_in, planned_out, ""]
+            guest_names = []
+            total_people = 0
+            for group in current_groups:
+                gn_col = self._hotel_pick(group, "Nam", "name")
+                gf_col = self._hotel_pick(group, "Family", "family")
+                gp_col = self._hotel_pick(group, "TedadAfrad", "people", "تعداد افراد")
+                gn = " ".join(x for x in (self._hotel_text(group.get(gn_col)) if gn_col else "", self._hotel_text(group.get(gf_col)) if gf_col else "") if x)
+                if gn:
+                    guest_names.append(gn)
+                try:
+                    total_people += max(1, int(float(group.get(gp_col) or 1))) if gp_col else 1
+                except (TypeError, ValueError):
+                    total_people += 1
+            guest_name = "، ".join(guest_names) if guest_names else " ".join(x for x in (self._hotel_text(display_guest.get(name_col)) if display_guest and name_col else "", self._hotel_text(display_guest.get(family_col)) if display_guest and family_col else "") if x)
+            capacity_count = self._hotel_room_capacity(room_row)
+            people_display = f"{total_people} از {capacity_count} نفر" if current_groups else (self._hotel_text(display_guest.get(people_col)) if display_guest and people_col else "")
+            values = [building, room, status, guest_name, people_display, actual_in or planned_in, planned_out, ""]
             row_idx = table.rowCount()
             table.insertRow(row_idx)
             for col_idx, value in enumerate(values):
@@ -2448,25 +2510,68 @@ class MainWindow(QMainWindow):
                     bg, border, accent = "#FFF7E8", "#E7C078", "#996515"
                 else:
                     bg, border, accent = "#F1F3F5", "#C9CED4", "#667085"
-                capacity = "۳ نفر ظرفیت" if building == "لاله" else "۲ نفر ظرفیت"
+                capacity = f"{capacity_count} نفر ظرفیت"
                 guest_line = guest_name or ("آماده پذیرش" if status == "خالی" else "اطلاعات مهمان ثبت نشده")
-                people_line = f"{self._hotel_text(display_guest.get(people_col))} نفر" if display_guest and people_col else capacity
+                people_line = f"{total_people} از {capacity_count} نفر" if current_groups else (f"{self._hotel_text(display_guest.get(people_col))} نفر" if display_guest and people_col else capacity)
                 shown_in = actual_in or planned_in
                 shown_out = actual_out or planned_out
                 date_line = f"\nورود {shown_in}   |   خروج {shown_out}" if shown_in or shown_out else ""
                 card_text = f"{room}  ·  {building}\n●  {status}\n{guest_line}\n{people_line}{date_line}"
-                card = QPushButton(card_text, self.hotelRoomCardsHost)
+                card = HotelRoomCardButton(card_text, self.hotelRoomCardsHost)
                 card.setObjectName("hotelRoomCardButton")
                 card.setMinimumSize(155, 128)
                 card.setMaximumWidth(280)
                 card.setCursor(Qt.CursorShape.PointingHandCursor)
                 card.setStyleSheet(f"QPushButton#hotelRoomCardButton {{ text-align:center; white-space:pre-wrap; background:{bg}; border:1px solid {border}; border-radius:10px; padding:9px; color:{accent}; font-size:11pt; font-weight:bold; }} QPushButton#hotelRoomCardButton:hover {{ border:2px solid {accent}; }}")
                 card.clicked.connect(lambda checked=False, b=building, r=room: self._hotel_open_room_for_reception(b, r))
+                card.setToolTip("برای پذیرش کلیک کنید؛ برای تغییر ظرفیت دوبار کلیک کنید.")
+                card.doubleClicked.connect(lambda b=building, r=room: self._hotel_edit_room_capacity(b, r))
                 cols = 5 if self.ui.tabHotel.width() > 1100 else 4
                 grid.addWidget(card, card_index // cols, card_index % cols)
             card_index += 1
         if grid:
             grid.setRowStretch(card_index // 5 + 1, 1)
+
+    def _hotel_edit_room_capacity(self, building, room):
+        room_row = next((r for r in self._hotel_rooms if self._hotel_building_name(r) == building and self._hotel_same_room(self._hotel_room_name(r), room)), None)
+        current_capacity = self._hotel_room_capacity(room_row or {"Capacity": 3})
+        capacity, ok = QInputDialog.getInt(self, "ظرفیت اتاق", f"ظرفیت اتاق {room} در ساختمان {building} (نفر):", current_capacity, 1, 100, 1)
+        if not ok:
+            return
+        conn = None
+        try:
+            conn = get_connection()
+            cur = conn.cursor()
+            schema = self._hotel_get_schema(cur, "tblMehmansera", "_hotel_room_schema")
+            norm = {self._hotel_norm(col): col for col in schema}
+            build_col = next((norm.get(self._hotel_norm(x)) for x in ("build", "building") if norm.get(self._hotel_norm(x))), None)
+            room_col = next((norm.get(self._hotel_norm(x)) for x in ("namOtagh", "namOtahg", "room", "roomname") if norm.get(self._hotel_norm(x))), None)
+            capacity_col = next((norm.get(self._hotel_norm(x)) for x in ("Capacity", "capacity") if norm.get(self._hotel_norm(x))), None)
+            if not build_col or not room_col or not capacity_col:
+                raise RuntimeError("فیلدهای build، namOtagh و Capacity باید در tblMehmansera موجود باشند.")
+            cur.execute(f"SELECT TOP 1 [{room_col}] FROM [tblMehmansera] WHERE [{build_col}]=? AND [{room_col}]=?", building, room)
+            exists = cur.fetchone() is not None
+            if exists:
+                cur.execute(f"UPDATE [tblMehmansera] SET [{capacity_col}]=? WHERE [{build_col}]=? AND [{room_col}]=?", capacity, building, room)
+            else:
+                status_col = next((norm.get(self._hotel_norm(x)) for x in ("status", "Status") if norm.get(self._hotel_norm(x))), None)
+                empty_col = next((norm.get(self._hotel_norm(x)) for x in ("empty",) if norm.get(self._hotel_norm(x))), None)
+                cols = [build_col, room_col, capacity_col]
+                vals = [building, room, capacity]
+                if status_col:
+                    cols.append(status_col); vals.append("فعال")
+                if empty_col:
+                    cols.append(empty_col); vals.append(True)
+                cur.execute(f"INSERT INTO [tblMehmansera] ({', '.join('['+c+']' for c in cols)}) VALUES ({', '.join('?' for _ in vals)})", vals)
+            conn.commit()
+        except Exception as exc:
+            QMessageBox.critical(self, "ظرفیت اتاق", f"ذخیره ظرفیت انجام نشد:\n{exc}")
+            return
+        finally:
+            if conn is not None:
+                conn.close()
+        self._hotel_load_all()
+        QMessageBox.information(self, "ظرفیت اتاق", f"ظرفیت اتاق {room} به {capacity} نفر تغییر کرد.")
 
     def _hotel_open_room_for_reception(self, building, room):
         idx = self.ui.cmbHotelBuilding.findText(building)
@@ -2502,8 +2607,16 @@ class MainWindow(QMainWindow):
                 continue
             room = self._hotel_room_name(row)
             if room:
-                current = self._hotel_current_guest(building, room)
-                if current is None:
+                room_row = next((r for r in self._hotel_rooms if self._hotel_building_name(r) == building and self._hotel_same_room(self._hotel_room_name(r), room)), None)
+                capacity = self._hotel_room_capacity(room_row or {"Capacity": 3})
+                current_people = 0
+                for group in self._hotel_current_guests(building, room):
+                    count_col = self._hotel_pick(group, "TedadAfrad", "people", "تعداد افراد")
+                    try:
+                        current_people += max(1, int(float(group.get(count_col) or 1))) if count_col else 1
+                    except (TypeError, ValueError):
+                        current_people += 1
+                if current_people < capacity:
                     combo.addItem(room, room)
         if previous:
             idx = combo.findText(previous)
@@ -2568,7 +2681,7 @@ class MainWindow(QMainWindow):
         self.ui.txtHotelDeparture.setText(self._hotel_today_jalali())
         self.ui.txtHotelActualArrival.clear()
         self.ui.txtHotelActualDeparture.clear()
-        self.ui.chkHotelBreakfast.setChecked(False); self.ui.chkHotelLunch.setChecked(False); self.ui.chkHotelDinner.setChecked(False)
+        self.ui.chkHotelBreakfast.setValue(0); self.ui.chkHotelLunch.setValue(0); self.ui.chkHotelDinner.setValue(0))
         if not keep_room:
             self.ui.cmbHotelBuilding.setCurrentIndex(0); self._hotel_refresh_room_combo()
         self._hotel_loading_guest_form = False
@@ -2587,8 +2700,8 @@ class MainWindow(QMainWindow):
         # جلوی ثبت اقامت بدون نام اتاق گرفته شود.
         if not first or not family or not room:
             QMessageBox.warning(self,"ثبت اقامت","نام، نام خانوادگی و اتاق را مشخص کنید."); return
-        if self._hotel_current_guest(building,room):
-            QMessageBox.warning(self,"اتاق اشغال است","برای این اتاق اقامت فعال ثبت شده است."); return
+        room_row = next((r for r in self._hotel_rooms if self._hotel_building_name(r) == building and self._hotel_same_room(self._hotel_room_name(r), room)), None)
+        capacity = self._hotel_room_capacity(room_row or {"Capacity": 3})
         arrival=self._hotel_date_db(self.ui.txtHotelArrival.text())
         departure=self._hotel_date_db(self.ui.txtHotelDeparture.text())
         if not arrival or not departure:
@@ -2603,8 +2716,13 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self,"تاریخ نامعتبر","تاریخ خروج واقعی را به شکل شمسی ۸ رقمی وارد کنید."); return
         if actual_arrival and actual_departure and actual_departure < actual_arrival:
             QMessageBox.warning(self,"تاریخ نامعتبر","تاریخ خروج واقعی نمی‌تواند قبل از ورود واقعی باشد."); return
-        if self._hotel_has_date_overlap(building, room, arrival, departure):
-            QMessageBox.warning(self,"تداخل اقامت","برای این اتاق در بازه انتخاب‌شده اقامت دیگری ثبت شده است."); return
+        try:
+            people_count = max(1, int(self.ui.txtHotelPeople.text().strip() or "1"))
+        except ValueError:
+            QMessageBox.warning(self, "تعداد افراد نامعتبر", "تعداد افراد باید یک عدد صحیح مثبت باشد."); return
+        occupied_people = self._hotel_room_occupied_people(building, room, arrival, departure)
+        if occupied_people + people_count > capacity:
+            QMessageBox.warning(self, "ظرفیت اتاق", f"ظرفیت این اتاق {capacity} نفر است؛ در این بازه {occupied_people} نفر ثبت شده‌اند و گروه جدید {people_count} نفر است."); return
         try:
             conn=get_connection()
             try:
@@ -2626,9 +2744,9 @@ class MainWindow(QMainWindow):
                     "tarikhout": int(actual_departure) if actual_departure else None,
                     "modateghamat": max(0, int(departure)-int(arrival)),
                     "empty": not (checkin_now or (arrival <= (self._hotel_date_db(self._hotel_today_jalali()) or "") <= departure and not actual_departure)),
-                    "sobhmanne": self.ui.chkHotelBreakfast.isChecked(),
-                    "nahar": self.ui.chkHotelLunch.isChecked(),
-                    "sham": self.ui.chkHotelDinner.isChecked(),
+                    "sobhmanne": self.ui.chkHotelBreakfast.value(),
+                    "nahar": self.ui.chkHotelLunch.value(),
+                    "sham": self.ui.chkHotelDinner.value(),
                     "darkhastkonande": self.username,
                     "editor": self.username,
                     # کد پرسنلی اختیاری است؛ رشته خالی به فیلد عددی Access ارسال نشود.
@@ -2638,8 +2756,24 @@ class MainWindow(QMainWindow):
                 # نام فیلد اتاق در نسخه‌های مختلف دیتابیس با دو املای رایج دیده شده:
                 # namOtahg (املای قدیمی) و namOtagh. هر دو باید پشتیبانی شوند.
                 field_aliases = {
-                    "namotahg": ("namotahg", "namotagh", "room", "roomname"),
-                    "build": ("build", "building"),
+                    "namotahg": ("namotahg", "namotagh", "room", "roomname", "نام اتاق"),
+                    "build": ("build", "building", "ساختمان"),
+                    "codemeli": ("codemeli", "kodemelli", "nationalcode", "کدملی"),
+                    "nam": ("nam", "name"),
+                    "family": ("family",),
+                    "tedadafrad": ("tedadafrad", "people", "تعداد افراد"),
+                    "sazman": ("sazman", "organization", "سازمان"),
+                    "tarikhvorod": ("tarikhvorod", "arrival", "تاریخ ورود"),
+                    "tarikhkhoroj": ("tarikhkhoroj", "departure", "تاریخ خروج"),
+                    "tarikhin": ("tarikhin", "actualcheckin", "تاریخ این"),
+                    "tarikhout": ("tarikhout", "actualcheckout", "تاریخ out"),
+                    "modateghamat": ("modateghamat", "stayduration", "مدت اقامت"),
+                    "sobhmanne": ("sobhmanne", "subhane", "breakfast", "صبحانه"),
+                    "nahar": ("nahar", "lunch", "ناهار"),
+                    "sham": ("sham", "dinner", "شام"),
+                    "darkhastkonande": ("darkhastkonande", "درخواست کننده"),
+                    "editor": ("editor",),
+                    "codepersoneli": ("codepersoneli", "personnelcode", "کد پرسنلی"),
                 }
                 for alias,val in values.items():
                     if alias == "codepersoneli" and isinstance(val, str) and val.isdigit():
@@ -2710,8 +2844,16 @@ class MainWindow(QMainWindow):
         if actual_arrival and actual_departure and actual_departure < actual_arrival:
             QMessageBox.warning(self, "تاریخ نامعتبر", "تاریخ خروج واقعی نمی‌تواند قبل از ورود واقعی باشد.")
             return
-        if self._hotel_has_date_overlap(building, room, arrival, departure):
-            QMessageBox.warning(self, "تداخل اقامت", "برای این اتاق در بازه انتخاب‌شده اقامت دیگری ثبت شده است.")
+        try:
+            people_count = max(1, int(self.ui.txtHotelPeople.text().strip() or "1"))
+        except ValueError:
+            QMessageBox.warning(self, "تعداد افراد نامعتبر", "تعداد افراد باید یک عدد صحیح مثبت باشد.")
+            return
+        room_row = next((r for r in self._hotel_rooms if self._hotel_building_name(r) == building and self._hotel_same_room(self._hotel_room_name(r), room)), None)
+        capacity = self._hotel_room_capacity(room_row or {"Capacity": 3})
+        occupied_people = self._hotel_room_occupied_people(building, room, arrival, departure, exclude_id=guest_id)
+        if occupied_people + people_count > capacity:
+            QMessageBox.warning(self, "ظرفیت اتاق", f"ظرفیت این اتاق {capacity} نفر است؛ در این بازه {occupied_people} نفر ثبت شده‌اند و این گروه {people_count} نفر است.")
             return
 
         conn = cursor = None
@@ -2737,15 +2879,31 @@ class MainWindow(QMainWindow):
                 "tarikhin": int(actual_arrival) if actual_arrival else None,
                 "tarikhout": int(actual_departure) if actual_departure else None,
                 "modateghamat": max(0, int(departure) - int(arrival)),
-                "sobhmanne": self.ui.chkHotelBreakfast.isChecked(),
-                "nahar": self.ui.chkHotelLunch.isChecked(),
-                "sham": self.ui.chkHotelDinner.isChecked(),
+                "sobhmanne": self.ui.chkHotelBreakfast.value(),
+                "nahar": self.ui.chkHotelLunch.value(),
+                "sham": self.ui.chkHotelDinner.value(),
                 "editor": self.username,
                 "codepersoneli": self.ui.txtHotelEmployee.text().strip() or None,
             }
             field_aliases = {
-                "namotahg": ("namotahg", "namotagh", "room", "roomname"),
-                "build": ("build", "building"),
+                "namotahg": ("namotahg", "namotagh", "room", "roomname", "نام اتاق"),
+                "build": ("build", "building", "ساختمان"),
+                "codemeli": ("codemeli", "kodemelli", "nationalcode", "کدملی"),
+                "nam": ("nam", "name"),
+                "family": ("family",),
+                "tedadafrad": ("tedadafrad", "people", "تعداد افراد"),
+                "sazman": ("sazman", "organization", "سازمان"),
+                "tarikhvorod": ("tarikhvorod", "arrival", "تاریخ ورود"),
+                "tarikhkhoroj": ("tarikhkhoroj", "departure", "تاریخ خروج"),
+                "tarikhin": ("tarikhin", "actualcheckin", "تاریخ این"),
+                "tarikhout": ("tarikhout", "actualcheckout", "تاریخ out"),
+                "modateghamat": ("modateghamat", "stayduration", "مدت اقامت"),
+                "sobhmanne": ("sobhmanne", "subhane", "breakfast", "صبحانه"),
+                "nahar": ("nahar", "lunch", "ناهار"),
+                "sham": ("sham", "dinner", "شام"),
+                "darkhastkonande": ("darkhastkonande", "درخواست کننده"),
+                "editor": ("editor",),
+                "codepersoneli": ("codepersoneli", "personnelcode", "کد پرسنلی"),
             }
             assignments = []
             params = []

@@ -5,3 +5,6 @@ __pycache__/
 *.mdb
 *.accdb
 *.pyc
+Backups/
+*.mdb.tmp
+*.accdb.tmp

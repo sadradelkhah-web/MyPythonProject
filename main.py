@@ -1884,7 +1884,7 @@ class MainWindow(QMainWindow):
             col = self._hotel_pick(row, *aliases)
             if col:
                 getattr(self.ui, widget_name).setText(self._hotel_text(row.get(col)))
-        for widget_name, aliases in (("chkHotelBreakfast", ("sobhmanne", "breakfast")), ("chkHotelLunch", ("nahar", "lunch")), ("chkHotelDinner", ("sham", "dinner"))):
+        for widget_name, aliases in (("chkHotelBreakfast", ("sobhmanne", "subhane", "breakfast", "صبحانه")), ("chkHotelLunch", ("nahar", "lunch", "ناهار")), ("chkHotelDinner", ("sham", "dinner", "شام"))):
             col = self._hotel_pick(row, *aliases)
             if col:
                 getattr(self.ui, widget_name).setValue(self._hotel_meal_count(row.get(col)))

@@ -1,19 +1,36 @@
-name: Validate Python syntax
+name: Generate Qt UI and validate Python
 
 on:
   push:
     branches: [main]
     paths:
       - 'main.py'
+      - 'main.ui'
       - '.github/workflows/validate-mainpy.yml'
 
+permissions:
+  contents: write
+
 jobs:
-  compile:
+  generate-and-validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: Compile main.py
-        run: python -m py_compile main.py
+      - name: Install Qt UI compiler
+        run: python -m pip install --upgrade pip PySide6
+      - name: Regenerate ui_main.py from Designer file
+        run: pyside6-uic main.ui -o ui_main.py
+      - name: Validate Python syntax
+        run: python -m py_compile main.py ui_main.py
+      - name: Commit generated UI file when changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ui_main.py
+          if ! git diff --cached --quiet; then
+            git commit -m "Regenerate ui_main.py from main.ui"
+            git push
+          fi

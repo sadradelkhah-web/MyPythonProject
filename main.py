@@ -1170,7 +1170,7 @@ class MainWindow(QMainWindow):
             cursor = conn.cursor()
 
             cursor.execute("""
-                SELECT MAX(VAL(wonumber))
+                SELECT MAX(wonumber)
                 FROM tblkar
             """)
 

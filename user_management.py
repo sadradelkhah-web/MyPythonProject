@@ -15,6 +15,19 @@ from db_config import get_connection
 # کنترلر متصل به ویجت‌های فرم اصلی
 # =========================================================
 
+def format_numeric_display(value):
+    """حذف صفرهای اعشاری غیرضروری از مقادیر عددی نمایشی."""
+    if value is None:
+        return ""
+    text = str(value).strip()
+    match = re.fullmatch(r"([+-]?\d+)\.(\d+)", text)
+    if not match:
+        return text
+    integer_part, fraction_part = match.groups()
+    fraction_part = fraction_part.rstrip("0")
+    return integer_part if not fraction_part else f"{integer_part}.{fraction_part}"
+
+
 class UserManagement:
 
     def __init__(self, parent_window, ui, current_user):
@@ -172,7 +185,7 @@ class UserManagement:
             value = ""
 
         return QTableWidgetItem(
-            str(value)
+            format_numeric_display(value)
         )
 
     # =====================================================

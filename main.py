@@ -1730,8 +1730,8 @@ class MainWindow(QMainWindow):
         layout.setSpacing(12)
         layout.addWidget(self.ui.groupHotelGuestForm)
 
-        # دکمه‌های اصلی پذیرش در main.ui تعریف شده‌اند و بیرون از groupHotelGuestForm
-        # قرار دارند؛ بنابراین باید صریحاً به صفحه پذیرش منتقل شوند.
+        # دکمه‌های تعریف‌شده در Designer بیرون از groupHotelGuestForm هستند؛
+        # آن‌ها را صریحاً به یک ردیف در صفحه پذیرش منتقل می‌کنیم.
         hotel_reception_buttons = (
             self.ui.btnHotelNew,
             self.ui.btnHotelEdit,
@@ -1741,11 +1741,14 @@ class MainWindow(QMainWindow):
             self.ui.btnHotelCheckOut,
             self.ui.btnHotelRefresh,
         )
+        reception_actions = QHBoxLayout()
+        reception_actions.setSpacing(8)
         for button in hotel_reception_buttons:
             button.setParent(self.hotelReceptionPage)
             button.setMinimumHeight(40)
             button.setVisible(True)
-            layout.addWidget(button)
+            reception_actions.addWidget(button)
+        layout.addLayout(reception_actions)
         layout.addStretch(1)
 
         layout = QVBoxLayout(self.hotelMovementsPage)
@@ -1787,6 +1790,49 @@ class MainWindow(QMainWindow):
         history_search.addWidget(self.ui.lblHotelSearch)
         history_search.addWidget(self.ui.txtHotelSearch, 1)
         layout.addLayout(history_search)
+
+        # فیلترهای گزارش سوابق: شخص، ساختمان/واحد و بازه تاریخ شمسی.
+        history_person_filter = QHBoxLayout()
+        history_person_filter.addWidget(QLabel("شخص (نام، نام خانوادگی یا کد ملی):", self.hotelHistoryPage))
+        self.txtHotelHistoryPerson = QLineEdit(self.hotelHistoryPage)
+        self.txtHotelHistoryPerson.setObjectName("txtHotelHistoryPerson")
+        self.txtHotelHistoryPerson.setPlaceholderText("نام، نام خانوادگی، کد ملی یا کد پرسنلی")
+        self.txtHotelHistoryPerson.setClearButtonEnabled(True)
+        history_person_filter.addWidget(self.txtHotelHistoryPerson, 2)
+
+        history_person_filter.addWidget(QLabel("واحد/ساختمان:", self.hotelHistoryPage))
+        self.cmbHotelHistoryBuilding = QComboBox(self.hotelHistoryPage)
+        self.cmbHotelHistoryBuilding.setObjectName("cmbHotelHistoryBuilding")
+        self.cmbHotelHistoryBuilding.addItems(["همه واحدها", "لاله", "لیان"])
+        history_person_filter.addWidget(self.cmbHotelHistoryBuilding, 1)
+        self.btnHotelHistoryApply = QPushButton("اعمال فیلتر", self.hotelHistoryPage)
+        self.btnHotelHistoryApply.setMinimumHeight(36)
+        history_person_filter.addWidget(self.btnHotelHistoryApply)
+        self.btnHotelHistoryClear = QPushButton("پاک کردن فیلتر", self.hotelHistoryPage)
+        self.btnHotelHistoryClear.setMinimumHeight(36)
+        history_person_filter.addWidget(self.btnHotelHistoryClear)
+        self.btnHotelHistoryReport = QPushButton("چاپ گزارش", self.hotelHistoryPage)
+        self.btnHotelHistoryReport.setMinimumHeight(36)
+        self.btnHotelHistoryReport.setToolTip("پیش‌نمایش چاپ گزارش بر اساس فیلترهای انتخاب‌شده")
+        history_person_filter.addWidget(self.btnHotelHistoryReport)
+        layout.addLayout(history_person_filter)
+
+        history_date_filter = QHBoxLayout()
+        history_date_filter.addWidget(QLabel("از تاریخ:", self.hotelHistoryPage))
+        self.txtHotelHistoryFrom = QLineEdit(self.hotelHistoryPage)
+        self.txtHotelHistoryFrom.setObjectName("txtHotelHistoryFrom")
+        self.txtHotelHistoryFrom.setPlaceholderText("تاریخ شمسی شروع")
+        self.txtHotelHistoryFrom.setClearButtonEnabled(True)
+        history_date_filter.addWidget(self.txtHotelHistoryFrom, 1)
+        history_date_filter.addWidget(QLabel("تا تاریخ:", self.hotelHistoryPage))
+        self.txtHotelHistoryTo = QLineEdit(self.hotelHistoryPage)
+        self.txtHotelHistoryTo.setObjectName("txtHotelHistoryTo")
+        self.txtHotelHistoryTo.setPlaceholderText("تاریخ شمسی پایان")
+        self.txtHotelHistoryTo.setClearButtonEnabled(True)
+        history_date_filter.addWidget(self.txtHotelHistoryTo, 1)
+        history_date_filter.addStretch(1)
+        layout.addLayout(history_date_filter)
+
         layout.addWidget(self.ui.groupHotelHistory, 1)
 
         self.hotelSections.addTab(self.hotelRoomsPage, "وضعیت اتاق‌ها")
@@ -1833,6 +1879,9 @@ class MainWindow(QMainWindow):
         self.ui.btnHotelCheckOut.clicked.connect(lambda: self._hotel_set_actual_date("checkout"))
         self.ui.btnHotelRefresh.clicked.connect(self._hotel_load_all)
         self.ui.txtHotelSearch.textChanged.connect(self._hotel_load_history)
+        self.btnHotelHistoryApply.clicked.connect(self._hotel_apply_history_filters)
+        self.btnHotelHistoryClear.clicked.connect(self._hotel_clear_history_filters)
+        self.btnHotelHistoryReport.clicked.connect(self._hotel_print_history_report)
         self.ui.tblHotelRooms.itemSelectionChanged.connect(self._hotel_room_selected)
         self.ui.tblHotelHistory.itemSelectionChanged.connect(self._hotel_history_selected)
         self.tblHotelToday.itemSelectionChanged.connect(self._hotel_today_selected)
@@ -1852,6 +1901,8 @@ class MainWindow(QMainWindow):
         install_calendar_action(self.ui.txtHotelDeparture)
         install_calendar_action(self.ui.txtHotelActualArrival)
         install_calendar_action(self.ui.txtHotelActualDeparture)
+        install_calendar_action(self.txtHotelHistoryFrom)
+        install_calendar_action(self.txtHotelHistoryTo)
         self._hotel_load_all()
 
     def _hotel_today_selected(self):
@@ -1966,7 +2017,7 @@ class MainWindow(QMainWindow):
                 return f"{jd.year:04d}/{jd.month:02d}/{jd.day:02d}"
             except Exception:
                 return value.strftime("%Y-%m-%d")
-        text = str(value).strip()
+        text = format_numeric_display(str(value).strip())
         # فیلدهای Number در Access ممکن است به صورت 14050722.0 برگردند.
         numeric_date = re.fullmatch(r"(\d{7,8})(?:\.0+)?", text)
         if numeric_date:
@@ -2370,34 +2421,41 @@ class MainWindow(QMainWindow):
         return total
 
     def _hotel_has_date_overlap(self, building, room, arrival, departure):
-        # چند خانواده می‌توانند هم‌زمان در یک اتاق باشند؛ کنترل اصلی با ظرفیت انجام می‌شود.
-        return False
-
-    def _hotel_has_date_overlap(self, building, room, arrival, departure):
+        """تمدید را تنها وقتی رد می‌کند که جمع نفرات از ظرفیت اتاق بیشتر شود."""
         new_arrival = self._hotel_date_db(arrival)
         new_departure = self._hotel_date_db(departure)
         if not new_arrival or not new_departure:
             return False
+
         editing_id = getattr(self, "_hotel_active_guest_id", None)
-        for row in self._hotel_guests:
-            if not self._hotel_same_building(self._hotel_building_name(row), building):
-                continue
-            if not self._hotel_same_room(self._hotel_guest_room(row), room):
-                continue
-            id_col = self._hotel_pick(row, "ID", "id")
-            if editing_id is not None and id_col and str(row.get(id_col)) == str(editing_id):
-                continue
-            arr_col = self._hotel_pick(row, "TarikhVorod", "arrival")
-            dep_col = self._hotel_pick(row, "TarikhKhoroj", "departure")
-            out_col = self._hotel_pick(row, "tarikhOut", "actualcheckout")
-            old_arr = self._hotel_date_db(row.get(arr_col)) if arr_col else None
-            old_dep = self._hotel_date_db(row.get(dep_col)) if dep_col else None
-            actual_out = self._hotel_date_db(row.get(out_col)) if out_col else None
-            if actual_out or not old_arr or not old_dep:
-                continue
-            if old_arr <= new_departure and new_arrival <= old_dep:
-                return True
-        return False
+        guest = next(
+            (row for row in self._hotel_guests
+             if str(row.get(self._hotel_pick(row, "ID", "id"))) == str(editing_id)),
+            None,
+        ) if editing_id not in (None, "") else None
+        room_row = next(
+            (row for row in self._hotel_rooms
+             if self._hotel_same_building(self._hotel_building_name(row), building)
+             and self._hotel_same_room(self._hotel_room_name(row), room)),
+            {"Capacity": 3},
+        )
+        capacity = self._hotel_room_capacity(room_row)
+        people_col = self._hotel_pick(guest or {}, "TedadAfrad", "people", "تعداد افراد") if guest else None
+        if people_col and guest.get(people_col) not in (None, ""):
+            try:
+                party_size = max(1, int(float(guest.get(people_col))))
+            except (TypeError, ValueError):
+                party_size = 1
+        else:
+            try:
+                party_size = max(1, int(self.ui.txtHotelPeople.text().strip() or "1"))
+            except (AttributeError, TypeError, ValueError):
+                party_size = 1
+
+        occupied_people = self._hotel_room_occupied_people(
+            building, room, new_arrival, new_departure, exclude_id=editing_id
+        )
+        return occupied_people + party_size > capacity
 
     def _hotel_render_rooms(self):
         table = self.ui.tblHotelRooms
@@ -2659,11 +2717,58 @@ class MainWindow(QMainWindow):
     def _hotel_load_history(self, *_args):
         table = self.ui.tblHotelHistory
         search = self.ui.txtHotelSearch.text().strip().casefold()
-        rows = self._hotel_guests
-        if search:
-            rows = [r for r in rows if search in " ".join(self._hotel_text(v) for v in r.values()).casefold()]
+        person_filter = getattr(self, "txtHotelHistoryPerson", None)
+        person_search = person_filter.text().strip().casefold() if person_filter else ""
+        building_filter = getattr(self, "cmbHotelHistoryBuilding", None)
+        building_value = building_filter.currentText().strip() if building_filter else "همه واحدها"
+        from_widget = getattr(self, "txtHotelHistoryFrom", None)
+        to_widget = getattr(self, "txtHotelHistoryTo", None)
+        from_date = self._hotel_date_db(from_widget.text()) if from_widget and from_widget.text().strip() else None
+        to_date = self._hotel_date_db(to_widget.text()) if to_widget and to_widget.text().strip() else None
+
+        filtered_rows = []
+        for row in self._hotel_guests:
+            if search and search not in " ".join(self._hotel_text(v) for v in row.values()).casefold():
+                continue
+
+            name_col = self._hotel_pick(row, "Nam", "name")
+            family_col = self._hotel_pick(row, "Family", "family")
+            national_col = self._hotel_pick(row, "CodeMeli", "nationalcode")
+            personnel_col = self._hotel_pick(row, "Codepersoneli", "personnelcode")
+            person_text = " ".join(
+                self._hotel_text(row.get(col))
+                for col in (name_col, family_col, national_col, personnel_col)
+                if col
+            ).casefold()
+            if person_search and person_search not in person_text:
+                continue
+
+            if building_value and building_value != "همه واحدها":
+                if not self._hotel_same_building(self._hotel_building_name(row), building_value):
+                    continue
+
+            arr_col = self._hotel_pick(row, "TarikhVorod", "arrival")
+            dep_col = self._hotel_pick(row, "TarikhKhoroj", "departure")
+            in_col = self._hotel_pick(row, "TarikhIn", "actualcheckin")
+            out_col = self._hotel_pick(row, "tarikhOut", "actualcheckout")
+            row_start = self._hotel_date_db(row.get(in_col)) if in_col and row.get(in_col) else (
+                self._hotel_date_db(row.get(arr_col)) if arr_col else None
+            )
+            row_end = self._hotel_date_db(row.get(out_col)) if out_col and row.get(out_col) else (
+                self._hotel_date_db(row.get(dep_col)) if dep_col else None
+            )
+
+            if (from_date or to_date) and (not row_start or not row_end):
+                continue
+            if from_date and row_end and row_end < from_date:
+                continue
+            if to_date and row_start and row_start > to_date:
+                continue
+
+            filtered_rows.append(row)
+
         table.setRowCount(0)
-        for row in reversed(rows):
+        for row in reversed(filtered_rows):
             id_col = self._hotel_pick(row, "ID", "id")
             name_col = self._hotel_pick(row, "Nam", "name")
             family_col = self._hotel_pick(row, "Family", "family")
@@ -2674,10 +2779,108 @@ class MainWindow(QMainWindow):
             in_col = self._hotel_pick(row, "TarikhIn", "actualcheckin")
             out_col = self._hotel_pick(row, "tarikhOut", "actualcheckout")
             stay_col = self._hotel_pick(row, "modat eqhamat", "modateghamat", "stayduration")
-            vals=[self._hotel_text(row.get(id_col)) if id_col else "", " ".join(x for x in [self._hotel_text(row.get(name_col)) if name_col else "",self._hotel_text(row.get(family_col)) if family_col else ""] if x),self._hotel_text(row.get(national_col)) if national_col else "",self._hotel_building_name(row),self._hotel_guest_room(row),self._hotel_text(row.get(people_col)) if people_col else "",self._hotel_text(row.get(arr_col)) if arr_col else "",self._hotel_text(row.get(dep_col)) if dep_col else "",self._hotel_text(row.get(in_col)) if in_col else "",self._hotel_text(row.get(out_col)) if out_col else "",self._hotel_text(row.get(stay_col)) if stay_col else ""]
-            idx=table.rowCount(); table.insertRow(idx)
-            for c,v in enumerate(vals): table.setItem(idx,c,QTableWidgetItem(str(v)))
-            table.item(idx,0).setData(Qt.ItemDataRole.UserRole,row.get(id_col) if id_col else None)
+            vals = [
+                self._hotel_text(row.get(id_col)) if id_col else "",
+                " ".join(x for x in (
+                    self._hotel_text(row.get(name_col)) if name_col else "",
+                    self._hotel_text(row.get(family_col)) if family_col else ""
+                ) if x),
+                self._hotel_text(row.get(national_col)) if national_col else "",
+                self._hotel_building_name(row),
+                self._hotel_guest_room(row),
+                self._hotel_text(row.get(people_col)) if people_col else "",
+                self._hotel_text(row.get(arr_col)) if arr_col else "",
+                self._hotel_text(row.get(dep_col)) if dep_col else "",
+                self._hotel_text(row.get(in_col)) if in_col else "",
+                self._hotel_text(row.get(out_col)) if out_col else "",
+                self._hotel_text(row.get(stay_col)) if stay_col else "",
+            ]
+            idx = table.rowCount()
+            table.insertRow(idx)
+            for col, value in enumerate(vals):
+                table.setItem(idx, col, QTableWidgetItem(str(value)))
+            table.item(idx, 0).setData(Qt.ItemDataRole.UserRole, row.get(id_col) if id_col else None)
+
+    def _hotel_apply_history_filters(self, *_args):
+        from_text = self.txtHotelHistoryFrom.text().strip()
+        to_text = self.txtHotelHistoryTo.text().strip()
+        from_date = self._hotel_date_db(from_text) if from_text else None
+        to_date = self._hotel_date_db(to_text) if to_text else None
+        if from_text and not from_date:
+            QMessageBox.warning(self, "تاریخ نامعتبر", "تاریخ شروع را با قالب شمسی وارد کنید؛ مثال 1405/07/18.")
+            return False
+        if to_text and not to_date:
+            QMessageBox.warning(self, "تاریخ نامعتبر", "تاریخ پایان را با قالب شمسی وارد کنید؛ مثال 1405/07/18.")
+            return False
+        if from_date and to_date and from_date > to_date:
+            QMessageBox.warning(self, "بازه نامعتبر", "تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد.")
+            return False
+        self._hotel_load_history()
+        return True
+
+    def _hotel_clear_history_filters(self, *_args):
+        self.txtHotelHistoryPerson.clear()
+        self.txtHotelHistoryFrom.clear()
+        self.txtHotelHistoryTo.clear()
+        self.cmbHotelHistoryBuilding.setCurrentIndex(0)
+        self.ui.txtHotelSearch.clear()
+        self._hotel_load_history()
+
+    def _hotel_print_history_report(self, *_args):
+        if not self._hotel_apply_history_filters():
+            return
+        table = self.ui.tblHotelHistory
+        if table.rowCount() == 0:
+            QMessageBox.information(self, "گزارش سوابق اقامت", "با فیلترهای انتخاب‌شده رکوردی برای گزارش پیدا نشد.")
+            return
+
+        from html import escape
+        headers = [
+            table.horizontalHeaderItem(col).text() if table.horizontalHeaderItem(col) else ""
+            for col in range(table.columnCount())
+        ]
+        header_html = "".join(f"<th>{escape(value)}</th>" for value in headers)
+        row_html = []
+        for row_index in range(table.rowCount()):
+            cells = []
+            for col_index in range(table.columnCount()):
+                item = table.item(row_index, col_index)
+                cells.append(f"<td>{escape(item.text() if item else '')}</td>")
+            row_html.append("<tr>" + "".join(cells) + "</tr>")
+
+        criteria = []
+        person_value = self.txtHotelHistoryPerson.text().strip()
+        building_value = self.cmbHotelHistoryBuilding.currentText().strip()
+        from_value = self.txtHotelHistoryFrom.text().strip()
+        to_value = self.txtHotelHistoryTo.text().strip()
+        if person_value:
+            criteria.append(f"شخص: {escape(person_value)}")
+        if building_value and building_value != "همه واحدها":
+            criteria.append(f"واحد/ساختمان: {escape(building_value)}")
+        if from_value:
+            criteria.append(f"از تاریخ: {escape(from_value)}")
+        if to_value:
+            criteria.append(f"تا تاریخ: {escape(to_value)}")
+        criteria_html = " | ".join(criteria) if criteria else "بدون فیلتر اختصاصی"
+
+        document = QTextDocument(self)
+        document.setHtml(
+            "<html><head><meta charset='utf-8'></head>"
+            "<body dir='rtl' style='font-family: B Nazanin; font-size: 9pt;'>"
+            "<h2 style='text-align:center'>گزارش سوابق اقامت</h2>"
+            f"<p style='text-align:right'>{criteria_html}</p>"
+            f"<p>تعداد رکوردها: {table.rowCount()}</p>"
+            "<table dir='rtl' border='1' cellspacing='0' cellpadding='3' "
+            "style='border-collapse:collapse; width:100%; font-size:8pt;'>"
+            f"<thead><tr>{header_html}</tr></thead><tbody>{''.join(row_html)}</tbody></table>"
+            "</body></html>"
+        )
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        printer.setOrientation(QPrinter.Orientation.Landscape)
+        preview = QPrintPreviewDialog(printer, self)
+        preview.setWindowTitle("پیش‌نمایش چاپ گزارش سوابق اقامت")
+        preview.paintRequested.connect(lambda target_printer: document.print_(target_printer))
+        preview.exec()
 
     def _hotel_clear_form(self, *_args, keep_room=False):
         self._hotel_loading_guest_form = True

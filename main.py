@@ -1730,21 +1730,22 @@ class MainWindow(QMainWindow):
         layout.setSpacing(12)
         layout.addWidget(self.ui.groupHotelGuestForm)
 
-        # تمام دکمه‌های فرم مهمان در main.ui داخل groupHotelGuestForm قرار دارند.
-        # این Layout را جابه‌جا نمی‌کنیم؛ جابه‌جایی آن باعث می‌شد دکمه‌های
-        # «مهمان جدید»، «ویرایش»، «تمدید»، «ثبت اقامت» و ... از فرم ناپدید شوند.
-        reception_status_actions = QHBoxLayout()
-        self.btnHotelReceptionCheckIn = QPushButton("ثبت ورود مهمان انتخاب‌شده")
-        self.btnHotelReceptionCheckOut = QPushButton("ثبت خروج مهمان انتخاب‌شده")
-        self.btnHotelReceptionCheckIn.setMinimumHeight(42)
-        self.btnHotelReceptionCheckOut.setMinimumHeight(42)
-        self.btnHotelReceptionCheckIn.setStyleSheet("background:#E6F4EA; border:1px solid #9CCBA8; font-weight:bold;")
-        self.btnHotelReceptionCheckOut.setStyleSheet("background:#FFF0E8; border:1px solid #E8B49A; font-weight:bold;")
-        self.btnHotelReceptionCheckIn.clicked.connect(lambda: self._hotel_set_actual_date("checkin"))
-        self.btnHotelReceptionCheckOut.clicked.connect(lambda: self._hotel_set_actual_date("checkout"))
-        reception_status_actions.addWidget(self.btnHotelReceptionCheckIn)
-        reception_status_actions.addWidget(self.btnHotelReceptionCheckOut)
-        layout.addLayout(reception_status_actions)
+        # دکمه‌های اصلی پذیرش در main.ui تعریف شده‌اند و بیرون از groupHotelGuestForm
+        # قرار دارند؛ بنابراین باید صریحاً به صفحه پذیرش منتقل شوند.
+        hotel_reception_buttons = (
+            self.ui.btnHotelNew,
+            self.ui.btnHotelEdit,
+            self.ui.btnHotelExtendStay,
+            self.ui.btnHotelSave,
+            self.ui.btnHotelCheckIn,
+            self.ui.btnHotelCheckOut,
+            self.ui.btnHotelRefresh,
+        )
+        for button in hotel_reception_buttons:
+            button.setParent(self.hotelReceptionPage)
+            button.setMinimumHeight(40)
+            button.setVisible(True)
+            layout.addWidget(button)
         layout.addStretch(1)
 
         layout = QVBoxLayout(self.hotelMovementsPage)
@@ -1782,9 +1783,10 @@ class MainWindow(QMainWindow):
 
         layout = QVBoxLayout(self.hotelHistoryPage)
         layout.setContentsMargins(10, 10, 10, 10)
-        search_layout = self.findChild(QHBoxLayout, "horizontalLayoutHotelSearch")
-        if search_layout:
-            move_layout_widgets(search_layout, layout, self.hotelHistoryPage)
+        history_search = QHBoxLayout()
+        history_search.addWidget(self.ui.lblHotelSearch)
+        history_search.addWidget(self.ui.txtHotelSearch, 1)
+        layout.addLayout(history_search)
         layout.addWidget(self.ui.groupHotelHistory, 1)
 
         self.hotelSections.addTab(self.hotelRoomsPage, "وضعیت اتاق‌ها")
@@ -1811,17 +1813,13 @@ class MainWindow(QMainWindow):
         self.ui.btnHotelLaleh.clicked.connect(lambda: self._hotel_set_building_filter("لاله"))
         self.ui.btnHotelLian.clicked.connect(lambda: self._hotel_set_building_filter("لیان"))
         self.ui.btnHotelAll.clicked.connect(lambda: self._hotel_set_building_filter(""))
-        # دکمه‌های فرم پذیرش در Designer تعریف شده‌اند و اینجا فقط رفتار و اندازه آن‌ها تنظیم می‌شود.
+        # همه کنترل‌های پذیرش در صفحه نمایش داده می‌شوند و رفتارشان فقط یک‌بار وصل می‌شود.
         for _button in (
-            self.ui.btnHotelNew,
-            self.ui.btnHotelEdit,
-            self.ui.btnHotelExtendStay,
-            self.ui.btnHotelSave,
-            self.ui.btnHotelCheckIn,
-            self.ui.btnHotelCheckOut,
+            self.ui.btnHotelNew, self.ui.btnHotelEdit, self.ui.btnHotelExtendStay,
+            self.ui.btnHotelSave, self.ui.btnHotelCheckIn, self.ui.btnHotelCheckOut,
             self.ui.btnHotelRefresh,
         ):
-            _button.setMinimumHeight(38)
+            _button.setMinimumHeight(40)
             _button.setVisible(True)
 
         self.ui.btnHotelNew.setText("مهمان جدید در همین اتاق")

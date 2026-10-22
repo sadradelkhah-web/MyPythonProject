@@ -4122,6 +4122,16 @@ class MainWindow(QMainWindow):
                         continue
                     if field in (recorder_field, editor_field):
                         continue
+                    # اکسل ممکن است عدد صحیح را به شکل 123.0 و تاریخ را به صورت date/datetime برگرداند.
+                    field_key = str(field).casefold().replace(" ", "")
+                    if field_key in ("invdate", "acqdate", "exitdate", "exitdate") and hasattr(raw, "strftime"):
+                        raw = raw.strftime("%Y%m%d")
+                    elif isinstance(raw, float) and raw.is_integer():
+                        raw = int(raw)
+                    elif isinstance(raw, str):
+                        raw = normalize_digits(raw.strip())
+                        if field_key in ("assetno", "loccode", "invdate", "acqdate", "budgno", "cd_vahed") and re.fullmatch(r"\\d+\\.0+", raw):
+                            raw = raw.split(".", 1)[0]
                     payload[field] = self._amval_to_db(field, raw)
                 if not payload.get(asset_field):
                     payload[asset_field] = self._amval_to_db(asset_field, asset_key)

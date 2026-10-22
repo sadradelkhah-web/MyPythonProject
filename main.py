@@ -1794,17 +1794,17 @@ class MainWindow(QMainWindow):
         # کنترل‌های فیلتر در main.ui و Qt Designer تعریف شده‌اند؛
         # اینجا فقط آن‌ها را به صفحهٔ سوابق runtime منتقل می‌کنیم.
         self.txtHotelHistoryPerson = self.ui.txtHotelHistoryPerson
-        self.cmbHotelHistoryBuilding = self.ui.cmbHotelHistoryBuilding
+        self.cmbHotelHistoryUnit = self.ui.cmbHotelHistoryUnit
         self.txtHotelHistoryFrom = self.ui.txtHotelHistoryFrom
         self.txtHotelHistoryTo = self.ui.txtHotelHistoryTo
         self.btnHotelHistoryApply = self.ui.btnHotelHistoryApply
         self.btnHotelHistoryClear = self.ui.btnHotelHistoryClear
         self.btnHotelHistoryReport = self.ui.btnHotelHistoryReport
-        self.cmbHotelHistoryBuilding.clear()
-        self.cmbHotelHistoryBuilding.addItems(["همه واحدها", "لاله", "لیان"])
+        self.cmbHotelHistoryUnit.clear()
+        self.cmbHotelHistoryUnit.addItems(["همه واحدها"])
         for _widget in (
             self.ui.lblHotelHistoryPerson, self.ui.txtHotelHistoryPerson,
-            self.ui.lblHotelHistoryBuilding, self.ui.cmbHotelHistoryBuilding,
+            self.ui.lblHotelHistoryUnit, self.ui.cmbHotelHistoryUnit,
             self.ui.btnHotelHistoryApply, self.ui.btnHotelHistoryClear,
             self.ui.btnHotelHistoryReport, self.ui.lblHotelHistoryFrom,
             self.ui.txtHotelHistoryFrom, self.ui.lblHotelHistoryTo,
@@ -1815,8 +1815,8 @@ class MainWindow(QMainWindow):
         history_person_filter = QHBoxLayout()
         history_person_filter.addWidget(self.ui.lblHotelHistoryPerson)
         history_person_filter.addWidget(self.txtHotelHistoryPerson, 2)
-        history_person_filter.addWidget(self.ui.lblHotelHistoryBuilding)
-        history_person_filter.addWidget(self.cmbHotelHistoryBuilding, 1)
+        history_person_filter.addWidget(self.ui.lblHotelHistoryUnit)
+        history_person_filter.addWidget(self.cmbHotelHistoryUnit, 1)
         history_person_filter.addWidget(self.btnHotelHistoryApply)
         history_person_filter.addWidget(self.btnHotelHistoryClear)
         history_person_filter.addWidget(self.btnHotelHistoryReport)
@@ -2287,6 +2287,7 @@ class MainWindow(QMainWindow):
             self._hotel_rooms = complete_rooms
             self._hotel_guests = guest_rows
             self._hotel_refresh_org_combo()
+            self._hotel_refresh_history_unit_filter()
             self._hotel_refresh_national_combo()
             self._hotel_render_rooms()
             self._hotel_load_history()
@@ -2710,12 +2711,32 @@ class MainWindow(QMainWindow):
         self.ui.lblHotelArrivals.setText(f"ورود امروز: {arrivals}")
         self.ui.lblHotelDepartures.setText(f"خروج امروز: {departures}")
 
+    def _hotel_refresh_history_unit_filter(self):
+        """فهرست واحدها را از مقدارهای واقعی Sazman در سوابق مهمان می‌سازد."""
+        combo = getattr(self, "cmbHotelHistoryUnit", None)
+        if combo is None:
+            return
+        selected = combo.currentText().strip()
+        units_by_key = {}
+        for row in self._hotel_guests:
+            unit_col = self._hotel_pick(row, "Sazman", "organization", "unit", "واحد")
+            unit = self._hotel_text(row.get(unit_col)).strip() if unit_col else ""
+            if unit:
+                units_by_key.setdefault(self._hotel_norm(unit), unit)
+        combo.blockSignals(True)
+        combo.clear()
+        combo.addItem("همه واحدها")
+        combo.addItems(sorted(units_by_key.values(), key=lambda value: value.casefold()))
+        index = combo.findText(selected)
+        combo.setCurrentIndex(index if index >= 0 else 0)
+        combo.blockSignals(False)
+
     def _hotel_load_history(self, *_args):
         table = self.ui.tblHotelHistory
         search = self.ui.txtHotelSearch.text().strip().casefold()
         person_filter = getattr(self, "txtHotelHistoryPerson", None)
         person_search = person_filter.text().strip().casefold() if person_filter else ""
-        building_filter = getattr(self, "cmbHotelHistoryBuilding", None)
+        building_filter = getattr(self, "cmbHotelHistoryUnit", None)
         building_value = building_filter.currentText().strip() if building_filter else "همه واحدها"
         from_widget = getattr(self, "txtHotelHistoryFrom", None)
         to_widget = getattr(self, "txtHotelHistoryTo", None)
@@ -2739,8 +2760,10 @@ class MainWindow(QMainWindow):
             if person_search and person_search not in person_text:
                 continue
 
+            unit_col = self._hotel_pick(row, "Sazman", "organization", "unit", "واحد")
+            row_unit = self._hotel_text(row.get(unit_col)).strip() if unit_col else ""
             if building_value and building_value != "همه واحدها":
-                if not self._hotel_same_building(self._hotel_building_name(row), building_value):
+                if self._hotel_norm(row_unit) != self._hotel_norm(building_value):
                     continue
 
             arr_col = self._hotel_pick(row, "TarikhVorod", "arrival")
@@ -2818,7 +2841,7 @@ class MainWindow(QMainWindow):
         self.txtHotelHistoryPerson.clear()
         self.txtHotelHistoryFrom.clear()
         self.txtHotelHistoryTo.clear()
-        self.cmbHotelHistoryBuilding.setCurrentIndex(0)
+        self.cmbHotelHistoryUnit.setCurrentIndex(0)
         self.ui.txtHotelSearch.clear()
         self._hotel_load_history()
 
@@ -2846,13 +2869,13 @@ class MainWindow(QMainWindow):
 
         criteria = []
         person_value = self.txtHotelHistoryPerson.text().strip()
-        building_value = self.cmbHotelHistoryBuilding.currentText().strip()
+        building_value = self.cmbHotelHistoryUnit.currentText().strip()
         from_value = self.txtHotelHistoryFrom.text().strip()
         to_value = self.txtHotelHistoryTo.text().strip()
         if person_value:
             criteria.append(f"شخص: {escape(person_value)}")
         if building_value and building_value != "همه واحدها":
-            criteria.append(f"واحد/ساختمان: {escape(building_value)}")
+            criteria.append(f"واحد/سازمان: {escape(building_value)}")
         if from_value:
             criteria.append(f"از تاریخ: {escape(from_value)}")
         if to_value:

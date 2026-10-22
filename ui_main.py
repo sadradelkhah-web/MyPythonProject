@@ -1791,15 +1791,15 @@ class Ui_MainWindow(object):
 
         self.horizontalLayoutHotelHistoryPersonFilters.addWidget(self.txtHotelHistoryPerson)
 
-        self.lblHotelHistoryBuilding = QLabel(self.hotelHistoryPage)
-        self.lblHotelHistoryBuilding.setObjectName(u"lblHotelHistoryBuilding")
+        self.lblHotelHistoryUnit = QLabel(self.hotelHistoryPage)
+        self.lblHotelHistoryUnit.setObjectName(u"lblHotelHistoryUnit")
 
-        self.horizontalLayoutHotelHistoryPersonFilters.addWidget(self.lblHotelHistoryBuilding)
+        self.horizontalLayoutHotelHistoryPersonFilters.addWidget(self.lblHotelHistoryUnit)
 
-        self.cmbHotelHistoryBuilding = QComboBox(self.hotelHistoryPage)
-        self.cmbHotelHistoryBuilding.setObjectName(u"cmbHotelHistoryBuilding")
+        self.cmbHotelHistoryUnit = QComboBox(self.hotelHistoryPage)
+        self.cmbHotelHistoryUnit.setObjectName(u"cmbHotelHistoryUnit")
 
-        self.horizontalLayoutHotelHistoryPersonFilters.addWidget(self.cmbHotelHistoryBuilding)
+        self.horizontalLayoutHotelHistoryPersonFilters.addWidget(self.cmbHotelHistoryUnit)
 
         self.btnHotelHistoryApply = QPushButton(self.hotelHistoryPage)
         self.btnHotelHistoryApply.setObjectName(u"btnHotelHistoryApply")
@@ -2702,7 +2702,7 @@ class Ui_MainWindow(object):
         self.hotelSections.setTabText(self.hotelSections.indexOf(self.hotelMovementsPage), QCoreApplication.translate("MainWindow", u"\u0648\u0631\u0648\u062f \u0648 \u062e\u0631\u0648\u062c \u0627\u0645\u0631\u0648\u0632", None))
         self.lblHotelHistoryPerson.setText(QCoreApplication.translate("MainWindow", u"\u0634\u062e\u0635 (\u0646\u0627\u0645 \u06cc\u0627 \u06a9\u062f \u0645\u0644\u06cc):", None))
         self.txtHotelHistoryPerson.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0646\u0627\u0645\u060c \u0646\u0627\u0645 \u062e\u0627\u0646\u0648\u0627\u062f\u06af\u06cc\u060c \u06a9\u062f \u0645\u0644\u06cc \u06cc\u0627 \u06a9\u062f \u067e\u0631\u0633\u0646\u0644\u06cc", None))
-        self.lblHotelHistoryBuilding.setText(QCoreApplication.translate("MainWindow", u"\u0648\u0627\u062d\u062f/\u0633\u0627\u062e\u062a\u0645\u0627\u0646:", None))
+        self.lblHotelHistoryUnit.setText(QCoreApplication.translate("MainWindow", u"\u0648\u0627\u062d\u062f/\u0633\u0627\u0632\u0645\u0627\u0646:", None))
         self.btnHotelHistoryApply.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0639\u0645\u0627\u0644 \u0641\u06cc\u0644\u062a\u0631", None))
         self.btnHotelHistoryClear.setText(QCoreApplication.translate("MainWindow", u"\u067e\u0627\u06a9 \u06a9\u0631\u062f\u0646 \u0641\u06cc\u0644\u062a\u0631", None))
 #if QT_CONFIG(tooltip)

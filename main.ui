@@ -1643,6 +1643,16 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
              </property>
             </widget>
            </item>
+           <item row="1" column="8">
+            <widget class="QPushButton" name="btnAmvalImportExcel">
+             <property name="toolTip">
+              <string>ورود گروهی اموال از فایل اکسل؛ شماره اموال تکراری ایجاد نمی‌شود</string>
+             </property>
+             <property name="text">
+              <string>ورود گروهی از اکسل</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>

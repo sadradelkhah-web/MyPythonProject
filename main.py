@@ -1812,7 +1812,7 @@ class MainWindow(QMainWindow):
         self.ui.btnHotelLaleh.clicked.connect(lambda: self._hotel_set_building_filter("لاله"))
         self.ui.btnHotelLian.clicked.connect(lambda: self._hotel_set_building_filter("لیان"))
         self.ui.btnHotelAll.clicked.connect(lambda: self._hotel_set_building_filter(""))
-        self.ui.btnHotelNew.clicked.connect(self._hotel_clear_form)
+        self.ui.btnHotelNew.clicked.connect(lambda: self._hotel_clear_form(keep_room=True))
         self.ui.btnHotelSave.clicked.connect(self._hotel_save_guest)
         self.ui.btnHotelEdit.clicked.connect(self._hotel_edit_guest)
         if hasattr(self.ui, "btnHotelExtendStay"):

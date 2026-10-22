@@ -3409,6 +3409,7 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
    <addaction name="menuUsers" />
    <addaction name="menuRepairs" />
    <addaction name="menuEquipment" />
+   <addaction name="menuHotel" />
    <addaction name="menuStationery" />
    <addaction name="menuReports" />
    <addaction name="menuHelp" />

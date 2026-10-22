@@ -3785,7 +3785,7 @@ class MainWindow(QMainWindow):
         for name in ("txtAmvalID", "txtAmvalAssetNo", "txtAmvalDescription", "txtAmvalStatus", "txtAmvalMahal",
                      "txtAmvalSerial", "txtAmvalLocCode", "txtAmvalInvDate", "txtAmvalExitDate", "txtAmvalAcqDate",
                      "txtAmvalLoc", "txtAmvalBudget", "txtAmvalManUser",
-                     "txtAmvalCdVahed", "txtAmvalRecorder", "txtAmvalEditor"):
+                     "txtAmvalRecorder", "txtAmvalEditor"):
             getattr(self.ui, name).clear()
         self.ui.txtAmvalNotes.clear()
         self.ui.cmbAmvalUnit.setCurrentIndex(-1)
@@ -3822,7 +3822,6 @@ class MainWindow(QMainWindow):
         field = col("NOTATIONS")
         self.ui.txtAmvalNotes.setPlainText(self._amval_text(row.get(field)) if field else "")
         set_line("txtAmvalManUser", "MANUSERL")
-        set_line("txtAmvalCdVahed", "Cd_Vahed")
         set_line("txtAmvalRecorder", "Recorder")
         set_line("txtAmvalEditor", "Editor")
         unit_field = col("vahed")
@@ -3853,7 +3852,6 @@ class MainWindow(QMainWindow):
             c("BUDGNO"): self.ui.txtAmvalBudget.text(),
             c("NOTATIONS"): self.ui.txtAmvalNotes.toPlainText(),
             c("vahed"): self.ui.cmbAmvalUnit.currentText().strip(),
-            c("Cd_Vahed"): self.ui.txtAmvalCdVahed.text(),
             c("MANUSERL"): self.ui.txtAmvalManUser.text(),
             c("Recorder"): self.ui.txtAmvalRecorder.text() or self.username,
             c("Editor"): self.username,

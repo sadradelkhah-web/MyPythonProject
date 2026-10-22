@@ -2681,7 +2681,7 @@ class MainWindow(QMainWindow):
         self.ui.txtHotelDeparture.setText(self._hotel_today_jalali())
         self.ui.txtHotelActualArrival.clear()
         self.ui.txtHotelActualDeparture.clear()
-        self.ui.chkHotelBreakfast.setValue(0); self.ui.chkHotelLunch.setValue(0); self.ui.chkHotelDinner.setValue(0))
+        self.ui.chkHotelBreakfast.setValue(0); self.ui.chkHotelLunch.setValue(0); self.ui.chkHotelDinner.setValue(0)
         if not keep_room:
             self.ui.cmbHotelBuilding.setCurrentIndex(0); self._hotel_refresh_room_combo()
         self._hotel_loading_guest_form = False

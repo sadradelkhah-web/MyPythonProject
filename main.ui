@@ -2747,14 +2747,14 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
                </widget>
               </item>
               <item>
-               <widget class="QLabel" name="lblHotelHistoryBuilding">
+               <widget class="QLabel" name="lblHotelHistoryUnit">
                 <property name="text">
-                 <string>واحد/ساختمان:</string>
+                 <string>واحد/سازمان:</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QComboBox" name="cmbHotelHistoryBuilding"/>
+               <widget class="QComboBox" name="cmbHotelHistoryUnit"/>
               </item>
               <item>
                <widget class="QPushButton" name="btnHotelHistoryApply">

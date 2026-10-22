@@ -91,7 +91,7 @@ def create_database_backup(max_backups=MAX_BACKUPS):
                 item for item in backup_dir.glob(pattern)
                 if item.is_file() and item != backup_path
             ),
-            key=lambda item: item.stat().st_mtime_ns,
+            key=lambda item: item.name,
             reverse=True,
         )
         for old_backup in backups[max(0, int(max_backups) - 1):]:

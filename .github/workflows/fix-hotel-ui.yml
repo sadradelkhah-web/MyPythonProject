@@ -1,0 +1,73 @@
+name: Fix hotel UI
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix-hotel:
+    if: ${{ !contains(github.event.head_commit.message, 'Fix hotel UI') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch hotel UI logic
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('main.py')
+          text = path.read_text(encoding='utf-8')
+          original = text
+
+          # QInputDialog is used by the room-capacity editor.
+          text = text.replace('    QMessageBox,\n    QPushButton,', '    QMessageBox,\n    QInputDialog,\n    QPushButton,', 1)
+
+          # Keep all Designer action buttons inside groupHotelGuestForm.
+          old = '''        # فقط آیتم‌های داخل Layout را به صفحه پذیرش منتقل می‌کنیم.\n        # خود Layout قبلی در tabHotel باقی نمی‌ماند؛ در غیر این صورت\n        # ویجت‌های دکمه‌ها ممکن است در گوشه بالا-چپ همه تب‌ها دیده شوند.\n        def move_layout_widgets(source_layout, target_layout, target_widget):\n            if source_layout is None:\n                return\n            while source_layout.count():\n                item = source_layout.takeAt(0)\n                widget = item.widget()\n                child_layout = item.layout()\n                if widget is not None:\n                    widget.setParent(target_widget)\n                    target_layout.addWidget(widget)\n                elif child_layout is not None:\n                    move_layout_widgets(child_layout, target_layout, target_widget)\n\n        actions = self.findChild(QHBoxLayout, "horizontalLayoutHotelActions")\n        if actions:\n            move_layout_widgets(actions, layout, self.hotelReceptionPage)\n'''
+          new = '''        # تمام دکمه‌های فرم مهمان در main.ui داخل groupHotelGuestForm قرار دارند.\n        # این Layout را جابه‌جا نمی‌کنیم؛ جابه‌جایی آن باعث می‌شد دکمه‌های\n        # «مهمان جدید»، «ویرایش»، «تمدید»، «ثبت اقامت» و ... از فرم ناپدید شوند.\n'''
+          if old not in text:
+              raise SystemExit('hotel action-layout block not found')
+          text = text.replace(old, new, 1)
+
+          # Do not move the reception form's check-in/out/refresh buttons to the Today page.
+          old = '''        movement_actions = QHBoxLayout()\n        movement_actions.addWidget(self.ui.btnHotelCheckIn)\n        movement_actions.addWidget(self.ui.btnHotelCheckOut)\n        movement_actions.addWidget(self.ui.btnHotelRefresh)\n        layout.addLayout(movement_actions)\n'''
+          new = '''        movement_actions = QHBoxLayout()\n        self.btnHotelTodayCheckIn = QPushButton("ثبت ورود مهمان انتخاب‌شده")\n        self.btnHotelTodayCheckOut = QPushButton("ثبت خروج مهمان انتخاب‌شده")\n        self.btnHotelTodayRefresh = QPushButton("بروزرسانی لیست امروز")\n        self.btnHotelTodayCheckIn.setMinimumHeight(40)\n        self.btnHotelTodayCheckOut.setMinimumHeight(40)\n        self.btnHotelTodayRefresh.setMinimumHeight(40)\n        self.btnHotelTodayCheckIn.setToolTip("ثبت ورود واقعی برای ردیف انتخاب‌شده")\n        self.btnHotelTodayCheckOut.setToolTip("ثبت خروج واقعی برای ردیف انتخاب‌شده")\n        self.btnHotelTodayRefresh.setToolTip("به‌روزرسانی ورودها و خروج‌های امروز")\n        self.btnHotelTodayCheckIn.clicked.connect(lambda: self._hotel_set_actual_date("checkin"))\n        self.btnHotelTodayCheckOut.clicked.connect(lambda: self._hotel_set_actual_date("checkout"))\n        self.btnHotelTodayRefresh.clicked.connect(self._hotel_load_all)\n        movement_actions.addWidget(self.btnHotelTodayCheckIn)\n        movement_actions.addWidget(self.btnHotelTodayCheckOut)\n        movement_actions.addWidget(self.btnHotelTodayRefresh)\n        layout.addLayout(movement_actions)\n'''
+          if old not in text:
+              raise SystemExit('hotel movement button block not found')
+          text = text.replace(old, new, 1)
+
+          # Make the reception action row clearly visible and usable.
+          marker = '        self.ui.btnHotelNew.setText("مهمان جدید در همین اتاق")\n'
+          insert = '''        # دکمه‌های فرم پذیرش در Designer تعریف شده‌اند و اینجا فقط رفتار و اندازه آن‌ها تنظیم می‌شود.\n        for _button in (\n            self.ui.btnHotelNew,\n            self.ui.btnHotelEdit,\n            self.ui.btnHotelExtendStay,\n            self.ui.btnHotelSave,\n            self.ui.btnHotelCheckIn,\n            self.ui.btnHotelCheckOut,\n            self.ui.btnHotelRefresh,\n        ):\n            _button.setMinimumHeight(38)\n            _button.setVisible(True)\n\n'''
+          if marker not in text:
+              raise SystemExit('hotel new button marker not found')
+          text = text.replace(marker, insert + marker, 1)
+
+          if text == original:
+              raise SystemExit('no changes made')
+          path.write_text(text, encoding='utf-8')
+          print('patched main.py')
+          PY
+
+      - name: Validate Python syntax
+        run: python -m py_compile main.py
+
+      - name: Commit and push fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add main.py
+          git commit -m "Fix hotel UI action buttons" || exit 0
+          git push
+
+      - name: Remove temporary workflow
+        if: success()
+        run: |
+          git rm .github/workflows/fix-hotel-ui.yml
+          git commit -m "Remove temporary hotel UI workflow"
+          git push

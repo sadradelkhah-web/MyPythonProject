@@ -3620,6 +3620,7 @@ class MainWindow(QMainWindow):
             ("btnAmvalClearFilter", self.clear_amval_filters),
             ("btnAmvalReport", self.export_amval_report),
             ("btnAmvalPrint", self.print_amval_report),
+            ("btnAmvalImportExcel", self.import_amval_from_excel),
         ):
             getattr(self.ui, name).clicked.connect(handler)
         self.ui.txtAmvalSearch.textChanged.connect(self.load_amval_data)
@@ -4017,6 +4018,192 @@ class MainWindow(QMainWindow):
             "<table><thead><tr>" + header_html + "</tr></thead><tbody>"
             + "".join(html_rows) + "</tbody></table></body></html>"
         )
+
+    def import_amval_from_excel(self):
+        """ورود گروهی از Excel؛ تکراری‌ها بر اساس ASSETNO شناسایی و فقط فیلدهای خالی تکمیل می‌شوند."""
+        path, _ = QFileDialog.getOpenFileName(
+            self, "انتخاب فایل اکسل اموال", "", "فایل‌های اکسل (*.xlsx)"
+        )
+        if not path:
+            return
+
+        conn = cursor = workbook = None
+        try:
+            from openpyxl import load_workbook
+
+            workbook = load_workbook(path, read_only=True, data_only=True)
+            sheet = workbook.active
+            rows = sheet.iter_rows(values_only=True)
+            headers = next(rows, None)
+            if not headers:
+                raise ValueError("فایل اکسل خالی است.")
+
+            conn = get_connection()
+            cursor = conn.cursor()
+            schema = self._amval_get_schema(cursor)
+            asset_field = self._amval_col("ASSETNO")
+            id_field = self._amval_col("ID")
+            if not asset_field:
+                raise RuntimeError("فیلد ASSETNO در جدول tblAmvall پیدا نشد.")
+
+            def norm_header(value):
+                text = normalize_digits(str(value or "")).strip().casefold()
+                text = text.replace("ي", "ی").replace("ك", "ک")
+                return "".join(ch for ch in text if ch.isalnum())
+
+            aliases = {
+                "ردیف": None, "row": None, "rownumber": None,
+                "شناسه": id_field, "id": id_field,
+                "شمارهاموال": asset_field, "assetno": asset_field, "assetnumber": asset_field,
+                "شرح": self._amval_col("DESCRIPTION"), "description": self._amval_col("DESCRIPTION"),
+                "discription": self._amval_col("DESCRIPTION"),
+                "کدلوکیشن": self._amval_col("Loc Code"), "loccode": self._amval_col("Loc Code"),
+                "loc": self._amval_col("LOC"),
+                "وضعیت": self._amval_col("Vazeiyat", "Vaziyat", "Status"),
+                "vazeiyat": self._amval_col("Vazeiyat", "Vaziyat", "Status"),
+                "status": self._amval_col("Vazeiyat", "Vaziyat", "Status"),
+                "محل": self._amval_col("mahal"),
+                "سریال": self._amval_col("SERIALNO", "SerialNo", "Serial", "شماره سریال"),
+                "شمارهسریال": self._amval_col("SERIALNO", "SerialNo", "Serial", "شماره سریال"),
+                "serialno": self._amval_col("SERIALNO", "SerialNo", "Serial", "شماره سریال"),
+                "کاربر": self._amval_col("MANUSERL"), "manuserl": self._amval_col("MANUSERL"),
+                "تاریخثبت": self._amval_col("INV DATE"), "invdate": self._amval_col("INV DATE"),
+                "تاریخخروج": self._amval_col("EXIT DATE", "ExitDate", "Exit Date"),
+                "exitdate": self._amval_col("EXIT DATE", "ExitDate", "Exit Date"),
+                "تاریختملک": self._amval_col("ACQ DATE"), "acqdate": self._amval_col("ACQ DATE"),
+                "شمارهبودجه": self._amval_col("BUDGNO"), "budgno": self._amval_col("BUDGNO"),
+                "توضیحات": self._amval_col("NOTATIONS"), "notations": self._amval_col("NOTATIONS"),
+                "واحد": self._amval_col("vahed"), "vahed": self._amval_col("vahed"),
+                "کدواحد": self._amval_col("Cd_Vahed", "CD_VAHED"),
+                "cdvahed": self._amval_col("Cd_Vahed", "CD_VAHED"),
+                "ثبتکننده": self._amval_col("Recorder"), "recorder": self._amval_col("Recorder"),
+                "ویرایشگر": self._amval_col("Editor"), "editor": self._amval_col("Editor"),
+            }
+            header_map = []
+            for header in headers:
+                key = norm_header(header)
+                field = aliases.get(key)
+                if field is None:
+                    field = next((name for name in schema if norm_header(name) == key), None)
+                header_map.append(field if field in schema and field != id_field else None)
+
+            asset_index = next((i for i, field in enumerate(header_map) if field == asset_field), None)
+            if asset_index is None:
+                raise ValueError("ستون شماره اموال (ASSETNO یا شماره اموال) در ردیف اول فایل پیدا نشد.")
+
+            cursor.execute("SELECT * FROM [tblAmvall]")
+            existing_rows = [dict(zip(schema, row)) for row in cursor.fetchall()]
+            existing_by_asset = {}
+            for existing in existing_rows:
+                key = normalize_digits(str(existing.get(asset_field) or "")).strip()
+                key = re.sub(r"^(\d+)\.0+$", r"\1", key)
+                if key:
+                    existing_by_asset.setdefault(key, existing)
+
+            added = completed = skipped = 0
+            recorder_field = self._amval_col("Recorder")
+            editor_field = self._amval_col("Editor")
+            for excel_row in rows:
+                if not excel_row or not any(value is not None and str(value).strip() for value in excel_row):
+                    continue
+                raw_asset = excel_row[asset_index] if asset_index < len(excel_row) else None
+                asset_key = normalize_digits(str(raw_asset or "")).strip()
+                asset_key = re.sub(r"^(\d+)\.0+$", r"\1", asset_key)
+                if not asset_key:
+                    skipped += 1
+                    continue
+
+                payload = {}
+                for index, field in enumerate(header_map):
+                    if not field or index >= len(excel_row) or field == id_field:
+                        continue
+                    raw = excel_row[index]
+                    if raw is None or (isinstance(raw, str) and not raw.strip()):
+                        continue
+                    if field in (recorder_field, editor_field):
+                        continue
+                    payload[field] = self._amval_to_db(field, raw)
+                if not payload.get(asset_field):
+                    payload[asset_field] = self._amval_to_db(asset_field, asset_key)
+
+                existing = existing_by_asset.get(asset_key)
+                if existing is not None:
+                    updates = {}
+                    for field, value in payload.items():
+                        old_value = existing.get(field)
+                        if old_value is None or (isinstance(old_value, str) and not old_value.strip()):
+                            updates[field] = value
+                    if updates:
+                        set_clause = ", ".join(f"[{field}] = ?" for field in updates)
+                        params = list(updates.values())
+                        if id_field and existing.get(id_field) is not None:
+                            cursor.execute(
+                                f"UPDATE [tblAmvall] SET {set_clause} WHERE [{id_field}] = ?",
+                                tuple(params + [existing[id_field]])
+                            )
+                        else:
+                            cursor.execute(
+                                f"UPDATE [tblAmvall] SET {set_clause} WHERE [{asset_field}] = ?",
+                                tuple(params + [self._amval_to_db(asset_field, asset_key)])
+                            )
+                        existing.update(updates)
+                        completed += 1
+                    else:
+                        skipped += 1
+                    continue
+
+                if recorder_field:
+                    payload[recorder_field] = self.username
+                if editor_field:
+                    payload[editor_field] = self.username
+                fields = [field for field in payload if field and field != id_field]
+                if not fields:
+                    skipped += 1
+                    continue
+                names = ", ".join(f"[{field}]" for field in fields)
+                marks = ", ".join("?" for _ in fields)
+                cursor.execute(
+                    f"INSERT INTO [tblAmvall] ({names}) VALUES ({marks})",
+                    tuple(payload[field] for field in fields)
+                )
+                existing_by_asset[asset_key] = dict(payload)
+                added += 1
+
+            conn.commit()
+            self.load_amval_data()
+            QMessageBox.information(
+                self, "نتیجه ورود گروهی اموال",
+                f"عملیات ورود اکسل پایان یافت.\n\n"
+                f"اموال جدید اضافه‌شده: {added}\n"
+                f"اموال موجود که فیلد خالی آن‌ها تکمیل شد: {completed}\n"
+                f"ردیف‌های تکراریِ بدون اطلاعات جدید یا نامعتبر: {skipped}"
+            )
+        except Exception as exc:
+            if conn is not None:
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+            QMessageBox.critical(
+                self, "خطا در ورود گروهی اموال",
+                f"ورود فایل اکسل انجام نشد.\n\n{exc}"
+            )
+        finally:
+            if workbook is not None:
+                try:
+                    workbook.close()
+                except Exception:
+                    pass
+            if cursor is not None:
+                try:
+                    cursor.close()
+                except Exception:
+                    pass
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def export_amval_report(self):
         path, selected_filter = QFileDialog.getSaveFileName(

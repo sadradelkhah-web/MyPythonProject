@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMainWindow,
     QMessageBox,
+    QInputDialog,
     QPushButton,
     QSizePolicy,
     QSpacerItem,
@@ -1729,25 +1730,9 @@ class MainWindow(QMainWindow):
         layout.setSpacing(12)
         layout.addWidget(self.ui.groupHotelGuestForm)
 
-        # فقط آیتم‌های داخل Layout را به صفحه پذیرش منتقل می‌کنیم.
-        # خود Layout قبلی در tabHotel باقی نمی‌ماند؛ در غیر این صورت
-        # ویجت‌های دکمه‌ها ممکن است در گوشه بالا-چپ همه تب‌ها دیده شوند.
-        def move_layout_widgets(source_layout, target_layout, target_widget):
-            if source_layout is None:
-                return
-            while source_layout.count():
-                item = source_layout.takeAt(0)
-                widget = item.widget()
-                child_layout = item.layout()
-                if widget is not None:
-                    widget.setParent(target_widget)
-                    target_layout.addWidget(widget)
-                elif child_layout is not None:
-                    move_layout_widgets(child_layout, target_layout, target_widget)
-
-        actions = self.findChild(QHBoxLayout, "horizontalLayoutHotelActions")
-        if actions:
-            move_layout_widgets(actions, layout, self.hotelReceptionPage)
+        # تمام دکمه‌های فرم مهمان در main.ui داخل groupHotelGuestForm قرار دارند.
+        # این Layout را جابه‌جا نمی‌کنیم؛ جابه‌جایی آن باعث می‌شد دکمه‌های
+        # «مهمان جدید»، «ویرایش»، «تمدید»، «ثبت اقامت» و ... از فرم ناپدید شوند.
         reception_status_actions = QHBoxLayout()
         self.btnHotelReceptionCheckIn = QPushButton("ثبت ورود مهمان انتخاب‌شده")
         self.btnHotelReceptionCheckOut = QPushButton("ثبت خروج مهمان انتخاب‌شده")
@@ -1778,9 +1763,21 @@ class MainWindow(QMainWindow):
         self.tblHotelToday.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.tblHotelToday, 1)
         movement_actions = QHBoxLayout()
-        movement_actions.addWidget(self.ui.btnHotelCheckIn)
-        movement_actions.addWidget(self.ui.btnHotelCheckOut)
-        movement_actions.addWidget(self.ui.btnHotelRefresh)
+        self.btnHotelTodayCheckIn = QPushButton("ثبت ورود مهمان انتخاب‌شده")
+        self.btnHotelTodayCheckOut = QPushButton("ثبت خروج مهمان انتخاب‌شده")
+        self.btnHotelTodayRefresh = QPushButton("بروزرسانی لیست امروز")
+        self.btnHotelTodayCheckIn.setMinimumHeight(40)
+        self.btnHotelTodayCheckOut.setMinimumHeight(40)
+        self.btnHotelTodayRefresh.setMinimumHeight(40)
+        self.btnHotelTodayCheckIn.setToolTip("ثبت ورود واقعی برای ردیف انتخاب‌شده")
+        self.btnHotelTodayCheckOut.setToolTip("ثبت خروج واقعی برای ردیف انتخاب‌شده")
+        self.btnHotelTodayRefresh.setToolTip("به‌روزرسانی ورودها و خروج‌های امروز")
+        self.btnHotelTodayCheckIn.clicked.connect(lambda: self._hotel_set_actual_date("checkin"))
+        self.btnHotelTodayCheckOut.clicked.connect(lambda: self._hotel_set_actual_date("checkout"))
+        self.btnHotelTodayRefresh.clicked.connect(self._hotel_load_all)
+        movement_actions.addWidget(self.btnHotelTodayCheckIn)
+        movement_actions.addWidget(self.btnHotelTodayCheckOut)
+        movement_actions.addWidget(self.btnHotelTodayRefresh)
         layout.addLayout(movement_actions)
 
         layout = QVBoxLayout(self.hotelHistoryPage)
@@ -1814,6 +1811,19 @@ class MainWindow(QMainWindow):
         self.ui.btnHotelLaleh.clicked.connect(lambda: self._hotel_set_building_filter("لاله"))
         self.ui.btnHotelLian.clicked.connect(lambda: self._hotel_set_building_filter("لیان"))
         self.ui.btnHotelAll.clicked.connect(lambda: self._hotel_set_building_filter(""))
+        # دکمه‌های فرم پذیرش در Designer تعریف شده‌اند و اینجا فقط رفتار و اندازه آن‌ها تنظیم می‌شود.
+        for _button in (
+            self.ui.btnHotelNew,
+            self.ui.btnHotelEdit,
+            self.ui.btnHotelExtendStay,
+            self.ui.btnHotelSave,
+            self.ui.btnHotelCheckIn,
+            self.ui.btnHotelCheckOut,
+            self.ui.btnHotelRefresh,
+        ):
+            _button.setMinimumHeight(38)
+            _button.setVisible(True)
+
         self.ui.btnHotelNew.setText("مهمان جدید در همین اتاق")
         self.ui.btnHotelNew.setMinimumHeight(38)
         self.ui.btnHotelNew.clicked.connect(lambda: self._hotel_clear_form(keep_room=True))

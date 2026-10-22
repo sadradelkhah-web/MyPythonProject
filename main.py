@@ -4130,7 +4130,7 @@ class MainWindow(QMainWindow):
                         raw = int(raw)
                     elif isinstance(raw, str):
                         raw = normalize_digits(raw.strip())
-                        if field_key in ("assetno", "loccode", "invdate", "acqdate", "budgno", "cd_vahed") and re.fullmatch(r"\\d+\\.0+", raw):
+                        if field_key in ("assetno", "loccode", "invdate", "acqdate", "budgno", "cd_vahed") and re.fullmatch(r"\d+\.0+", raw):
                             raw = raw.split(".", 1)[0]
                     payload[field] = self._amval_to_db(field, raw)
                 if not payload.get(asset_field):

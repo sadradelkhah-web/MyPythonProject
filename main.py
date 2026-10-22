@@ -4,7 +4,7 @@ from datetime import datetime, date as py_date
 
 from PySide6.QtCore import QDate, QDateTime, QTimer, Qt, QStringListModel
 from PySide6.QtGui import QAction, QFont, QIcon, QPainter, QPen, QPixmap, QColor, QTextDocument
-from PySide6.QtPrintSupport import QPrinter, QPrintDialog
+from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrintPreviewDialog
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
@@ -3973,41 +3973,107 @@ class MainWindow(QMainWindow):
                 except Exception: pass
 
     def _amval_report_html(self):
-        headers = [self.ui.tblAmvalList.horizontalHeaderItem(i).text() for i in range(self.ui.tblAmvalList.columnCount())]
-        html = ["<html><head><meta charset='utf-8'></head><body dir='rtl'>",
-                "<h2 style='text-align:center'>گزارش اموال</h2>",
-                f"<p>تعداد رکورد: {self.ui.tblAmvalList.rowCount()}</p>",
-                "<table border='1' cellspacing='0' cellpadding='4' style='border-collapse:collapse;width:100%;font-family:B Nazanin;font-size:9pt'>",
-                "<tr>" + "".join(f"<th>{h}</th>" for h in headers) + "</tr>"]
-        for r in range(self.ui.tblAmvalList.rowCount()):
-            html.append("<tr>" + "".join(f"<td>{(self.ui.tblAmvalList.item(r,c).text() if self.ui.tblAmvalList.item(r,c) else '')}</td>" for c in range(self.ui.tblAmvalList.columnCount())) + "</tr>")
-        html.append("</table></body></html>")
-        return "".join(html)
+        import html
+        table = self.ui.tblAmvalList
+        headers = [
+            table.horizontalHeaderItem(i).text() if table.horizontalHeaderItem(i) else ""
+            for i in range(table.columnCount())
+        ]
+        html_rows = []
+        for r in range(table.rowCount()):
+            cells = []
+            for c in range(table.columnCount()):
+                item = table.item(r, c)
+                value = item.text() if item else ""
+                cells.append(f"<td>{html.escape(value)}</td>")
+            html_rows.append("<tr>" + "".join(cells) + "</tr>")
+        header_html = "".join(f"<th>{html.escape(value)}</th>" for value in headers)
+        return (
+            "<html><head><meta charset='utf-8'><style>"
+            "@page { size: A4 landscape; margin: 10mm; }"
+            "body { direction:rtl; font-family:'B Nazanin','Tahoma'; }"
+            "h2 { text-align:center; }"
+            "table { direction:rtl; width:100%; border-collapse:collapse; font-size:8pt; }"
+            "th,td { border:1px solid #777; padding:4px; text-align:center; }"
+            "th { background:#e8eef5; font-weight:bold; }"
+            "tr { page-break-inside:avoid; }"
+            "</style></head><body>"
+            "<h2>گزارش اموال</h2>"
+            f"<p>تعداد رکورد: {table.rowCount()}</p>"
+            "<table><thead><tr>" + header_html + "</tr></thead><tbody>"
+            + "".join(html_rows) + "</tbody></table></body></html>"
+        )
 
     def export_amval_report(self):
-        path, _ = QFileDialog.getSaveFileName(self, "ذخیره گزارش اموال", "گزارش_اموال.csv", "CSV (*.csv)")
+        path, selected_filter = QFileDialog.getSaveFileName(
+            self, "ذخیره گزارش اموال", "گزارش_اموال.xlsx",
+            "فایل اکسل (*.xlsx)"
+        )
         if not path:
             return
-        import csv
+        if not path.lower().endswith(".xlsx"):
+            path += ".xlsx"
         try:
-            with open(path, "w", newline="", encoding="utf-8-sig") as f:
-                writer = csv.writer(f)
-                writer.writerow([self.ui.tblAmvalList.horizontalHeaderItem(i).text() for i in range(self.ui.tblAmvalList.columnCount())])
-                for r in range(self.ui.tblAmvalList.rowCount()):
-                    writer.writerow([self.ui.tblAmvalList.item(r,c).text() if self.ui.tblAmvalList.item(r,c) else "" for c in range(self.ui.tblAmvalList.columnCount())])
-            QMessageBox.information(self, "گزارش اموال", f"گزارش با موفقیت ذخیره شد:\n{path}")
+            from openpyxl import Workbook
+            from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+            from openpyxl.utils import get_column_letter
+
+            table = self.ui.tblAmvalList
+            workbook = Workbook()
+            sheet = workbook.active
+            sheet.title = "گزارش اموال"
+            sheet.sheet_view.rightToLeft = True
+            headers = [
+                table.horizontalHeaderItem(i).text() if table.horizontalHeaderItem(i) else ""
+                for i in range(table.columnCount())
+            ]
+            sheet.append(headers)
+            header_fill = PatternFill("solid", fgColor="DCE6F1")
+            thin = Side(style="thin", color="A6A6A6")
+            for cell in sheet[1]:
+                cell.font = Font(name="B Nazanin", bold=True, size=12)
+                cell.fill = header_fill
+                cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                cell.border = Border(left=thin, right=thin, top=thin, bottom=thin)
+            for r in range(table.rowCount()):
+                values = [
+                    table.item(r, c).text() if table.item(r, c) else ""
+                    for c in range(table.columnCount())
+                ]
+                sheet.append(values)
+                for cell in sheet[sheet.max_row]:
+                    cell.font = Font(name="B Nazanin", size=11)
+                    cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                    cell.border = Border(left=thin, right=thin, top=thin, bottom=thin)
+            sheet.freeze_panes = "A2"
+            sheet.auto_filter.ref = sheet.dimensions
+            sheet.row_dimensions[1].height = 30
+            for column_cells in sheet.columns:
+                max_length = max((len(str(cell.value or "")) for cell in column_cells), default=10)
+                sheet.column_dimensions[get_column_letter(column_cells[0].column)].width = min(max(max_length + 3, 12), 38)
+            workbook.save(path)
+            QMessageBox.information(self, "گزارش اموال", f"فایل اکسل با موفقیت ذخیره شد:\\n{path}")
+        except ImportError:
+            QMessageBox.warning(
+                self, "گزارش اموال",
+                "برای خروجی اکسل، کتابخانه openpyxl نصب نیست. در ترمینال پروژه اجرا کنید:\\npip install openpyxl"
+            )
         except Exception as exc:
-            QMessageBox.warning(self, "گزارش اموال", f"ذخیره گزارش انجام نشد:\n{exc}")
+            QMessageBox.warning(self, "گزارش اموال", f"ذخیره فایل اکسل انجام نشد:\\n{exc}")
 
     def print_amval_report(self):
-        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-        dialog = QPrintDialog(printer, self)
-        dialog.setWindowTitle("چاپ گزارش اموال")
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return
-        document = QTextDocument()
-        document.setHtml(self._amval_report_html())
-        document.print_(printer)
+        try:
+            printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+            document = QTextDocument(self)
+            document.setDefaultFont(QFont("B Nazanin", 9))
+            document.setHtml(self._amval_report_html())
+            preview = QPrintPreviewDialog(printer, self)
+            preview.setWindowTitle("پیش‌نمایش و چاپ گزارش اموال")
+            preview.setWindowState(preview.windowState() | Qt.WindowState.WindowMaximized)
+            preview.paintRequested.connect(document.print_)
+            preview.exec()
+        except Exception as exc:
+            QMessageBox.warning(self, "چاپ گزارش اموال", f"نمایش پیش‌نمایش چاپ انجام نشد:\\n{exc}")
 
     # ---------------------------------------------------------
     # مدیریت کد کالاهای MESC (جدول موجود Access با نام mesc)

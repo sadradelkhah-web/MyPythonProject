@@ -3379,6 +3379,12 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
     <addaction name="actionEquipmentList" />
     <addaction name="actionAssets" />
    </widget>
+   <widget class="QMenu" name="menuHotel">
+    <property name="title">
+     <string>اتاقداری</string>
+    </property>
+    <addaction name="actionHotel" />
+   </widget>
    <widget class="QMenu" name="menuStationery">
     <property name="title">
      <string>لوازم‌التحریر</string>
@@ -3563,6 +3569,11 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
    </property>
   </action>
 
+  <action name="actionHotel">
+   <property name="text">
+    <string>اتاقداری و مهمانسرا</string>
+   </property>
+  </action>
   <action name="actionAnbarTahrir">
   <property name="text">
    <string>انبار لوازم‌التحریر</string>

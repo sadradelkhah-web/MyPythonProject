@@ -1791,48 +1791,44 @@ class MainWindow(QMainWindow):
         history_search.addWidget(self.ui.txtHotelSearch, 1)
         layout.addLayout(history_search)
 
-        # فیلترهای گزارش سوابق: شخص، ساختمان/واحد و بازه تاریخ شمسی.
-        history_person_filter = QHBoxLayout()
-        history_person_filter.addWidget(QLabel("شخص (نام، نام خانوادگی یا کد ملی):", self.hotelHistoryPage))
-        self.txtHotelHistoryPerson = QLineEdit(self.hotelHistoryPage)
-        self.txtHotelHistoryPerson.setObjectName("txtHotelHistoryPerson")
-        self.txtHotelHistoryPerson.setPlaceholderText("نام، نام خانوادگی، کد ملی یا کد پرسنلی")
-        self.txtHotelHistoryPerson.setClearButtonEnabled(True)
-        history_person_filter.addWidget(self.txtHotelHistoryPerson, 2)
-
-        history_person_filter.addWidget(QLabel("واحد/ساختمان:", self.hotelHistoryPage))
-        self.cmbHotelHistoryBuilding = QComboBox(self.hotelHistoryPage)
-        self.cmbHotelHistoryBuilding.setObjectName("cmbHotelHistoryBuilding")
+        # کنترل‌های فیلتر در main.ui و Qt Designer تعریف شده‌اند؛
+        # اینجا فقط آن‌ها را به صفحهٔ سوابق runtime منتقل می‌کنیم.
+        self.txtHotelHistoryPerson = self.ui.txtHotelHistoryPerson
+        self.cmbHotelHistoryBuilding = self.ui.cmbHotelHistoryBuilding
+        self.txtHotelHistoryFrom = self.ui.txtHotelHistoryFrom
+        self.txtHotelHistoryTo = self.ui.txtHotelHistoryTo
+        self.btnHotelHistoryApply = self.ui.btnHotelHistoryApply
+        self.btnHotelHistoryClear = self.ui.btnHotelHistoryClear
+        self.btnHotelHistoryReport = self.ui.btnHotelHistoryReport
+        self.cmbHotelHistoryBuilding.clear()
         self.cmbHotelHistoryBuilding.addItems(["همه واحدها", "لاله", "لیان"])
+        for _widget in (
+            self.ui.lblHotelHistoryPerson, self.ui.txtHotelHistoryPerson,
+            self.ui.lblHotelHistoryBuilding, self.ui.cmbHotelHistoryBuilding,
+            self.ui.btnHotelHistoryApply, self.ui.btnHotelHistoryClear,
+            self.ui.btnHotelHistoryReport, self.ui.lblHotelHistoryFrom,
+            self.ui.txtHotelHistoryFrom, self.ui.lblHotelHistoryTo,
+            self.ui.txtHotelHistoryTo,
+        ):
+            _widget.setParent(self.hotelHistoryPage)
+
+        history_person_filter = QHBoxLayout()
+        history_person_filter.addWidget(self.ui.lblHotelHistoryPerson)
+        history_person_filter.addWidget(self.txtHotelHistoryPerson, 2)
+        history_person_filter.addWidget(self.ui.lblHotelHistoryBuilding)
         history_person_filter.addWidget(self.cmbHotelHistoryBuilding, 1)
-        self.btnHotelHistoryApply = QPushButton("اعمال فیلتر", self.hotelHistoryPage)
-        self.btnHotelHistoryApply.setMinimumHeight(36)
         history_person_filter.addWidget(self.btnHotelHistoryApply)
-        self.btnHotelHistoryClear = QPushButton("پاک کردن فیلتر", self.hotelHistoryPage)
-        self.btnHotelHistoryClear.setMinimumHeight(36)
         history_person_filter.addWidget(self.btnHotelHistoryClear)
-        self.btnHotelHistoryReport = QPushButton("چاپ گزارش", self.hotelHistoryPage)
-        self.btnHotelHistoryReport.setMinimumHeight(36)
-        self.btnHotelHistoryReport.setToolTip("پیش‌نمایش چاپ گزارش بر اساس فیلترهای انتخاب‌شده")
         history_person_filter.addWidget(self.btnHotelHistoryReport)
         layout.addLayout(history_person_filter)
 
         history_date_filter = QHBoxLayout()
-        history_date_filter.addWidget(QLabel("از تاریخ:", self.hotelHistoryPage))
-        self.txtHotelHistoryFrom = QLineEdit(self.hotelHistoryPage)
-        self.txtHotelHistoryFrom.setObjectName("txtHotelHistoryFrom")
-        self.txtHotelHistoryFrom.setPlaceholderText("تاریخ شمسی شروع")
-        self.txtHotelHistoryFrom.setClearButtonEnabled(True)
+        history_date_filter.addWidget(self.ui.lblHotelHistoryFrom)
         history_date_filter.addWidget(self.txtHotelHistoryFrom, 1)
-        history_date_filter.addWidget(QLabel("تا تاریخ:", self.hotelHistoryPage))
-        self.txtHotelHistoryTo = QLineEdit(self.hotelHistoryPage)
-        self.txtHotelHistoryTo.setObjectName("txtHotelHistoryTo")
-        self.txtHotelHistoryTo.setPlaceholderText("تاریخ شمسی پایان")
-        self.txtHotelHistoryTo.setClearButtonEnabled(True)
+        history_date_filter.addWidget(self.ui.lblHotelHistoryTo)
         history_date_filter.addWidget(self.txtHotelHistoryTo, 1)
         history_date_filter.addStretch(1)
         layout.addLayout(history_date_filter)
-
         layout.addWidget(self.ui.groupHotelHistory, 1)
 
         self.hotelSections.addTab(self.hotelRoomsPage, "وضعیت اتاق‌ها")

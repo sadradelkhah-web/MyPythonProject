@@ -743,6 +743,7 @@ class MainWindow(QMainWindow):
             "tabKar": ("actionRepairsRequest", "actionRepairsHistory"),
             "tabReport": ("actionReportRepairs", "actionReportEquipment"),
             "tabAmval": ("actionAssets",),
+            "tabHotel": ("actionHotel",),
             "tabAnbarTahrir": ("actionAnbarTahrir",),
             "tabMtoTahrir": ("actionMtoTahrir",),
         }
@@ -784,6 +785,7 @@ class MainWindow(QMainWindow):
         )
         ui.actionAbout.triggered.connect(self.show_about)
         ui.actionAssets.triggered.connect(lambda checked=False: self.open_page(self.ui.tabAmval))
+        ui.actionHotel.triggered.connect(lambda checked=False: self.open_page(self.ui.tabHotel))
         ui.actionAnbarTahrir.triggered.connect(lambda checked=False: self.open_page(self.ui.tabAnbarTahrir))
         ui.actionMtoTahrir.triggered.connect(lambda checked=False: self.open_page(self.ui.tabMtoTahrir))
         ui.menuUsers.menuAction().setVisible(self.is_master)
@@ -1812,6 +1814,8 @@ class MainWindow(QMainWindow):
         self.ui.btnHotelLaleh.clicked.connect(lambda: self._hotel_set_building_filter("لاله"))
         self.ui.btnHotelLian.clicked.connect(lambda: self._hotel_set_building_filter("لیان"))
         self.ui.btnHotelAll.clicked.connect(lambda: self._hotel_set_building_filter(""))
+        self.ui.btnHotelNew.setText("مهمان جدید در همین اتاق")
+        self.ui.btnHotelNew.setMinimumHeight(38)
         self.ui.btnHotelNew.clicked.connect(lambda: self._hotel_clear_form(keep_room=True))
         self.ui.btnHotelSave.clicked.connect(self._hotel_save_guest)
         self.ui.btnHotelEdit.clicked.connect(self._hotel_edit_guest)

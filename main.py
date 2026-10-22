@@ -5645,29 +5645,12 @@ class MainWindow(QMainWindow):
         self.load_report_data()
 
     def closeEvent(self, event):
-        """در خروج عادی برنامه، فقط برای SuperAdmin از دیتابیس محلی نسخه پشتیبان می‌گیرد."""
-        if not self.is_master:
-            event.accept()
-            return
-
-        # جلوگیری از اجرای دوباره پشتیبان‌گیری در رویداد خروج تکراری.
-        if getattr(self, "_exit_backup_attempted", False):
-            event.accept()
-            return
-        self._exit_backup_attempted = True
-
-        success, message, _backup_path = create_database_backup()
-        if success:
-            QMessageBox.information(
-                self,
-                "پشتیبان‌گیری دیتابیس",
-                message,
-            )
-        else:
-            QMessageBox.warning(
-                self,
-                "پشتیبان‌گیری انجام نشد",
-                message + "\n\nبرنامه بسته می‌شود؛ دیتابیس اصلی تغییر نکرده است.",
-            )
-
+        """هنگام خروج عادی، برای SuperAdmin بی‌صدا یک نسخه پشتیبان می‌سازد."""
+        if self.is_master and not getattr(self, "_exit_backup_attempted", False):
+            self._exit_backup_attempted = True
+            try:
+                # پشتیبان‌گیری در صورت خطا نباید مانع بسته‌شدن برنامه شود.
+                create_database_backup()
+            except Exception:
+                pass
         event.accept()

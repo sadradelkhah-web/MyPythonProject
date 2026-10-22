@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'main.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.11.2
+## Created by: Qt User Interface Compiler version 6.12.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -16,11 +16,11 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox,
-    QFormLayout, QFrame, QGridLayout, QGroupBox,
-    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
-    QMainWindow, QMenu, QMenuBar, QPlainTextEdit,
-    QPushButton, QScrollArea, QSizePolicy, QSpacerItem,
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QFormLayout,
+    QFrame, QGridLayout, QGroupBox, QHBoxLayout,
+    QHeaderView, QLabel, QLineEdit, QMainWindow,
+    QMenu, QMenuBar, QPlainTextEdit, QPushButton,
+    QScrollArea, QSizePolicy, QSpacerItem, QSpinBox,
     QStatusBar, QTabWidget, QTableWidget, QTableWidgetItem,
     QVBoxLayout, QWidget)
 
@@ -52,6 +52,8 @@ class Ui_MainWindow(object):
         self.actionReportEquipment.setObjectName(u"actionReportEquipment")
         self.actionAbout = QAction(MainWindow)
         self.actionAbout.setObjectName(u"actionAbout")
+        self.actionHotel = QAction(MainWindow)
+        self.actionHotel.setObjectName(u"actionHotel")
         self.actionAnbarTahrir = QAction(MainWindow)
         self.actionAnbarTahrir.setObjectName(u"actionAnbarTahrir")
         self.actionMtoTahrir = QAction(MainWindow)
@@ -1094,6 +1096,11 @@ class Ui_MainWindow(object):
 
         self.gridLayoutAmvalFilter.addWidget(self.btnAmvalPrint, 1, 7, 1, 1)
 
+        self.btnAmvalImportExcel = QPushButton(self.groupAmvalFilter)
+        self.btnAmvalImportExcel.setObjectName(u"btnAmvalImportExcel")
+
+        self.gridLayoutAmvalFilter.addWidget(self.btnAmvalImportExcel, 1, 8, 1, 1)
+
 
         self.verticalLayoutAmval.addWidget(self.groupAmvalFilter)
 
@@ -1275,26 +1282,6 @@ class Ui_MainWindow(object):
         self.txtAmvalManUser.setObjectName(u"txtAmvalManUser")
 
         self.gridLayoutAmvalInfo.addWidget(self.txtAmvalManUser, 4, 7, 1, 1)
-
-        self.lblAmvalCode = QLabel(self.groupAmvalInfo)
-        self.lblAmvalCode.setObjectName(u"lblAmvalCode")
-
-        self.gridLayoutAmvalInfo.addWidget(self.lblAmvalCode, 5, 0, 1, 1)
-
-        self.txtAmvalCode = QLineEdit(self.groupAmvalInfo)
-        self.txtAmvalCode.setObjectName(u"txtAmvalCode")
-
-        self.gridLayoutAmvalInfo.addWidget(self.txtAmvalCode, 5, 1, 1, 1)
-
-        self.lblAmvalCdVahed = QLabel(self.groupAmvalInfo)
-        self.lblAmvalCdVahed.setObjectName(u"lblAmvalCdVahed")
-
-        self.gridLayoutAmvalInfo.addWidget(self.lblAmvalCdVahed, 5, 2, 1, 1)
-
-        self.txtAmvalCdVahed = QLineEdit(self.groupAmvalInfo)
-        self.txtAmvalCdVahed.setObjectName(u"txtAmvalCdVahed")
-
-        self.gridLayoutAmvalInfo.addWidget(self.txtAmvalCdVahed, 5, 3, 1, 1)
 
         self.lblAmvalRecorder = QLabel(self.groupAmvalInfo)
         self.lblAmvalRecorder.setObjectName(u"lblAmvalRecorder")
@@ -1659,18 +1646,27 @@ class Ui_MainWindow(object):
 
         self.gridLayoutHotelGuestForm.addWidget(self.txtHotelEmployee, 1, 9, 1, 1)
 
-        self.chkHotelBreakfast = QCheckBox(self.groupHotelGuestForm)
+        self.chkHotelBreakfast = QSpinBox(self.groupHotelGuestForm)
         self.chkHotelBreakfast.setObjectName(u"chkHotelBreakfast")
+        self.chkHotelBreakfast.setMinimum(0)
+        self.chkHotelBreakfast.setMaximum(9999)
+        self.chkHotelBreakfast.setValue(0)
 
         self.gridLayoutHotelGuestForm.addWidget(self.chkHotelBreakfast, 2, 0, 1, 2)
 
-        self.chkHotelLunch = QCheckBox(self.groupHotelGuestForm)
+        self.chkHotelLunch = QSpinBox(self.groupHotelGuestForm)
         self.chkHotelLunch.setObjectName(u"chkHotelLunch")
+        self.chkHotelLunch.setMinimum(0)
+        self.chkHotelLunch.setMaximum(9999)
+        self.chkHotelLunch.setValue(0)
 
         self.gridLayoutHotelGuestForm.addWidget(self.chkHotelLunch, 2, 2, 1, 2)
 
-        self.chkHotelDinner = QCheckBox(self.groupHotelGuestForm)
+        self.chkHotelDinner = QSpinBox(self.groupHotelGuestForm)
         self.chkHotelDinner.setObjectName(u"chkHotelDinner")
+        self.chkHotelDinner.setMinimum(0)
+        self.chkHotelDinner.setMaximum(9999)
+        self.chkHotelDinner.setValue(0)
 
         self.gridLayoutHotelGuestForm.addWidget(self.chkHotelDinner, 2, 4, 1, 2)
 
@@ -1782,6 +1778,77 @@ class Ui_MainWindow(object):
         self.hotelHistoryPageLayout.setSpacing(8)
         self.hotelHistoryPageLayout.setObjectName(u"hotelHistoryPageLayout")
         self.hotelHistoryPageLayout.setContentsMargins(8, 8, 8, 8)
+        self.horizontalLayoutHotelHistoryPersonFilters = QHBoxLayout()
+        self.horizontalLayoutHotelHistoryPersonFilters.setObjectName(u"horizontalLayoutHotelHistoryPersonFilters")
+        self.lblHotelHistoryPerson = QLabel(self.hotelHistoryPage)
+        self.lblHotelHistoryPerson.setObjectName(u"lblHotelHistoryPerson")
+
+        self.horizontalLayoutHotelHistoryPersonFilters.addWidget(self.lblHotelHistoryPerson)
+
+        self.txtHotelHistoryPerson = QLineEdit(self.hotelHistoryPage)
+        self.txtHotelHistoryPerson.setObjectName(u"txtHotelHistoryPerson")
+        self.txtHotelHistoryPerson.setClearButtonEnabled(True)
+
+        self.horizontalLayoutHotelHistoryPersonFilters.addWidget(self.txtHotelHistoryPerson)
+
+        self.lblHotelHistoryBuilding = QLabel(self.hotelHistoryPage)
+        self.lblHotelHistoryBuilding.setObjectName(u"lblHotelHistoryBuilding")
+
+        self.horizontalLayoutHotelHistoryPersonFilters.addWidget(self.lblHotelHistoryBuilding)
+
+        self.cmbHotelHistoryBuilding = QComboBox(self.hotelHistoryPage)
+        self.cmbHotelHistoryBuilding.setObjectName(u"cmbHotelHistoryBuilding")
+
+        self.horizontalLayoutHotelHistoryPersonFilters.addWidget(self.cmbHotelHistoryBuilding)
+
+        self.btnHotelHistoryApply = QPushButton(self.hotelHistoryPage)
+        self.btnHotelHistoryApply.setObjectName(u"btnHotelHistoryApply")
+        self.btnHotelHistoryApply.setMinimumSize(QSize(0, 36))
+
+        self.horizontalLayoutHotelHistoryPersonFilters.addWidget(self.btnHotelHistoryApply)
+
+        self.btnHotelHistoryClear = QPushButton(self.hotelHistoryPage)
+        self.btnHotelHistoryClear.setObjectName(u"btnHotelHistoryClear")
+        self.btnHotelHistoryClear.setMinimumSize(QSize(0, 36))
+
+        self.horizontalLayoutHotelHistoryPersonFilters.addWidget(self.btnHotelHistoryClear)
+
+        self.btnHotelHistoryReport = QPushButton(self.hotelHistoryPage)
+        self.btnHotelHistoryReport.setObjectName(u"btnHotelHistoryReport")
+        self.btnHotelHistoryReport.setMinimumSize(QSize(0, 36))
+
+        self.horizontalLayoutHotelHistoryPersonFilters.addWidget(self.btnHotelHistoryReport)
+
+
+        self.hotelHistoryPageLayout.addLayout(self.horizontalLayoutHotelHistoryPersonFilters)
+
+        self.horizontalLayoutHotelHistoryDateFilters = QHBoxLayout()
+        self.horizontalLayoutHotelHistoryDateFilters.setObjectName(u"horizontalLayoutHotelHistoryDateFilters")
+        self.lblHotelHistoryFrom = QLabel(self.hotelHistoryPage)
+        self.lblHotelHistoryFrom.setObjectName(u"lblHotelHistoryFrom")
+
+        self.horizontalLayoutHotelHistoryDateFilters.addWidget(self.lblHotelHistoryFrom)
+
+        self.txtHotelHistoryFrom = QLineEdit(self.hotelHistoryPage)
+        self.txtHotelHistoryFrom.setObjectName(u"txtHotelHistoryFrom")
+        self.txtHotelHistoryFrom.setClearButtonEnabled(True)
+
+        self.horizontalLayoutHotelHistoryDateFilters.addWidget(self.txtHotelHistoryFrom)
+
+        self.lblHotelHistoryTo = QLabel(self.hotelHistoryPage)
+        self.lblHotelHistoryTo.setObjectName(u"lblHotelHistoryTo")
+
+        self.horizontalLayoutHotelHistoryDateFilters.addWidget(self.lblHotelHistoryTo)
+
+        self.txtHotelHistoryTo = QLineEdit(self.hotelHistoryPage)
+        self.txtHotelHistoryTo.setObjectName(u"txtHotelHistoryTo")
+        self.txtHotelHistoryTo.setClearButtonEnabled(True)
+
+        self.horizontalLayoutHotelHistoryDateFilters.addWidget(self.txtHotelHistoryTo)
+
+
+        self.hotelHistoryPageLayout.addLayout(self.horizontalLayoutHotelHistoryDateFilters)
+
         self.groupHotelHistory = QGroupBox(self.hotelHistoryPage)
         self.groupHotelHistory.setObjectName(u"groupHotelHistory")
         self.verticalLayoutHotelHistory = QVBoxLayout(self.groupHotelHistory)
@@ -2180,6 +2247,8 @@ class Ui_MainWindow(object):
         self.menuRepairs.setObjectName(u"menuRepairs")
         self.menuEquipment = QMenu(self.menubar)
         self.menuEquipment.setObjectName(u"menuEquipment")
+        self.menuHotel = QMenu(self.menubar)
+        self.menuHotel.setObjectName(u"menuHotel")
         self.menuStationery = QMenu(self.menubar)
         self.menuStationery.setObjectName(u"menuStationery")
         self.menuReports = QMenu(self.menubar)
@@ -2223,6 +2292,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuUsers.menuAction())
         self.menubar.addAction(self.menuRepairs.menuAction())
         self.menubar.addAction(self.menuEquipment.menuAction())
+        self.menubar.addAction(self.menuHotel.menuAction())
         self.menubar.addAction(self.menuStationery.menuAction())
         self.menubar.addAction(self.menuReports.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
@@ -2235,6 +2305,7 @@ class Ui_MainWindow(object):
         self.menuRepairs.addAction(self.actionRepairsHistory)
         self.menuEquipment.addAction(self.actionEquipmentList)
         self.menuEquipment.addAction(self.actionAssets)
+        self.menuHotel.addAction(self.actionHotel)
         self.menuStationery.addAction(self.actionAnbarTahrir)
         self.menuStationery.addAction(self.actionMtoTahrir)
         self.menuReports.addAction(self.actionReportRepairs)
@@ -2279,6 +2350,7 @@ class Ui_MainWindow(object):
         self.actionReportRepairs.setText(QCoreApplication.translate("MainWindow", u"\u06af\u0632\u0627\u0631\u0634 \u062a\u0639\u0645\u06cc\u0631\u0627\u062a", None))
         self.actionReportEquipment.setText(QCoreApplication.translate("MainWindow", u"\u06af\u0632\u0627\u0631\u0634 \u062a\u062c\u0647\u06cc\u0632\u0627\u062a", None))
         self.actionAbout.setText(QCoreApplication.translate("MainWindow", u"\u062f\u0631\u0628\u0627\u0631\u0647 \u0628\u0631\u0646\u0627\u0645\u0647", None))
+        self.actionHotel.setText(QCoreApplication.translate("MainWindow", u"\u0627\u062a\u0627\u0642\u062f\u0627\u0631\u06cc \u0648 \u0645\u0647\u0645\u0627\u0646\u0633\u0631\u0627", None))
         self.actionAnbarTahrir.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0646\u0628\u0627\u0631 \u0644\u0648\u0627\u0632\u0645\u200c\u0627\u0644\u062a\u062d\u0631\u06cc\u0631", None))
         self.actionMtoTahrir.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0642\u0627\u0636\u0627\u06cc \u0644\u0648\u0627\u0632\u0645\u200c\u0627\u0644\u062a\u062d\u0631\u06cc\u0631", None))
         self.lblNavigationTitle.setText(QCoreApplication.translate("MainWindow", u"\u0633\u0627\u0645\u0627\u0646\u0647 \u0645\u062f\u06cc\u0631\u06cc\u062a", None))
@@ -2451,6 +2523,10 @@ class Ui_MainWindow(object):
         self.btnAmvalClearFilter.setText(QCoreApplication.translate("MainWindow", u"\u062d\u0630\u0641 \u0641\u06cc\u0644\u062a\u0631", None))
         self.btnAmvalReport.setText(QCoreApplication.translate("MainWindow", u"\u06af\u0632\u0627\u0631\u0634 \u0627\u0645\u0648\u0627\u0644", None))
         self.btnAmvalPrint.setText(QCoreApplication.translate("MainWindow", u"\u0686\u0627\u067e \u06af\u0632\u0627\u0631\u0634", None))
+#if QT_CONFIG(tooltip)
+        self.btnAmvalImportExcel.setToolTip(QCoreApplication.translate("MainWindow", u"\u0648\u0631\u0648\u062f \u06af\u0631\u0648\u0647\u06cc \u0627\u0645\u0648\u0627\u0644 \u0627\u0632 \u0641\u0627\u06cc\u0644 \u0627\u06a9\u0633\u0644\u061b \u0634\u0645\u0627\u0631\u0647 \u0627\u0645\u0648\u0627\u0644 \u062a\u06a9\u0631\u0627\u0631\u06cc \u0627\u06cc\u062c\u0627\u062f \u0646\u0645\u06cc\u200c\u0634\u0648\u062f", None))
+#endif // QT_CONFIG(tooltip)
+        self.btnAmvalImportExcel.setText(QCoreApplication.translate("MainWindow", u"\u0648\u0631\u0648\u062f \u06af\u0631\u0648\u0647\u06cc \u0627\u0632 \u0627\u06a9\u0633\u0644", None))
         self.groupAmvalInfo.setTitle(QCoreApplication.translate("MainWindow", u"\u0627\u0637\u0644\u0627\u0639\u0627\u062a \u0645\u0627\u0644", None))
         self.lblAmvalID.setText(QCoreApplication.translate("MainWindow", u"\u0634\u0646\u0627\u0633\u0647:", None))
         self.lblAmvalAssetNo.setText(QCoreApplication.translate("MainWindow", u"\u0634\u0645\u0627\u0631\u0647 \u0627\u0645\u0648\u0627\u0644:", None))
@@ -2475,8 +2551,6 @@ class Ui_MainWindow(object):
         self.cmbAmvalActive.setItemText(1, QCoreApplication.translate("MainWindow", u"\u063a\u06cc\u0631\u0641\u0639\u0627\u0644", None))
 
         self.lblAmvalManUser.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0633\u062a\u0641\u0627\u062f\u0647\u200c\u06a9\u0646\u0646\u062f\u0647 (MANUSERL):", None))
-        self.lblAmvalCode.setText(QCoreApplication.translate("MainWindow", u"\u06a9\u062f (Code):", None))
-        self.lblAmvalCdVahed.setText(QCoreApplication.translate("MainWindow", u"\u06a9\u062f \u0648\u0627\u062d\u062f (Cd_Vahed):", None))
         self.lblAmvalRecorder.setText(QCoreApplication.translate("MainWindow", u"\u062b\u0628\u062a\u200c\u06a9\u0646\u0646\u062f\u0647:", None))
         self.lblAmvalEditor.setText(QCoreApplication.translate("MainWindow", u"\u0648\u06cc\u0631\u0627\u06cc\u0634\u06af\u0631:", None))
         self.btnAmvalNew.setText(QCoreApplication.translate("MainWindow", u"\u0645\u0627\u0644 \u062c\u062f\u06cc\u062f", None))
@@ -2569,9 +2643,18 @@ class Ui_MainWindow(object):
         self.lblHotelDeparture.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0627\u0631\u06cc\u062e \u062e\u0631\u0648\u062c \u0628\u0631\u0646\u0627\u0645\u0647\u200c\u0631\u06cc\u0632\u06cc\u200c\u0634\u062f\u0647:", None))
         self.txtHotelDeparture.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0634\u0645\u0633\u06cc: 1405/07/18", None))
         self.lblHotelEmployee.setText(QCoreApplication.translate("MainWindow", u"\u06a9\u062f \u067e\u0631\u0633\u0646\u0644\u06cc:", None))
-        self.chkHotelBreakfast.setText(QCoreApplication.translate("MainWindow", u"\u0635\u0628\u062d\u0627\u0646\u0647", None))
-        self.chkHotelLunch.setText(QCoreApplication.translate("MainWindow", u"\u0646\u0627\u0647\u0627\u0631", None))
-        self.chkHotelDinner.setText(QCoreApplication.translate("MainWindow", u"\u0634\u0627\u0645", None))
+        self.chkHotelBreakfast.setPrefix(QCoreApplication.translate("MainWindow", u"\u0635\u0628\u062d\u0627\u0646\u0647: ", None))
+#if QT_CONFIG(tooltip)
+        self.chkHotelBreakfast.setToolTip(QCoreApplication.translate("MainWindow", u"\u062a\u0639\u062f\u0627\u062f \u0635\u0628\u062d\u0627\u0646\u0647 \u0645\u0635\u0631\u0641\u200c\u0634\u062f\u0647 \u062f\u0631 \u06a9\u0644 \u0645\u062f\u062a \u0627\u0642\u0627\u0645\u062a", None))
+#endif // QT_CONFIG(tooltip)
+        self.chkHotelLunch.setPrefix(QCoreApplication.translate("MainWindow", u"\u0646\u0627\u0647\u0627\u0631: ", None))
+#if QT_CONFIG(tooltip)
+        self.chkHotelLunch.setToolTip(QCoreApplication.translate("MainWindow", u"\u062a\u0639\u062f\u0627\u062f \u0646\u0627\u0647\u0627\u0631 \u0645\u0635\u0631\u0641\u200c\u0634\u062f\u0647 \u062f\u0631 \u06a9\u0644 \u0645\u062f\u062a \u0627\u0642\u0627\u0645\u062a", None))
+#endif // QT_CONFIG(tooltip)
+        self.chkHotelDinner.setPrefix(QCoreApplication.translate("MainWindow", u"\u0634\u0627\u0645: ", None))
+#if QT_CONFIG(tooltip)
+        self.chkHotelDinner.setToolTip(QCoreApplication.translate("MainWindow", u"\u062a\u0639\u062f\u0627\u062f \u0634\u0627\u0645 \u0645\u0635\u0631\u0641\u200c\u0634\u062f\u0647 \u062f\u0631 \u06a9\u0644 \u0645\u062f\u062a \u0627\u0642\u0627\u0645\u062a", None))
+#endif // QT_CONFIG(tooltip)
         self.lblHotelActualArrival.setText(QCoreApplication.translate("MainWindow", u"\u0648\u0631\u0648\u062f \u0648\u0627\u0642\u0639\u06cc", None))
 #if QT_CONFIG(tooltip)
         self.txtHotelActualArrival.setToolTip(QCoreApplication.translate("MainWindow", u"\u062a\u0627\u0631\u06cc\u062e \u0648\u0627\u0642\u0639\u06cc \u0648\u0631\u0648\u062f \u0645\u0647\u0645\u0627\u0646\u061b \u062e\u0627\u0644\u06cc \u0628\u0645\u0627\u0646\u062f \u062a\u0627 \u062a\u0627\u0631\u06cc\u062e \u0627\u0645\u0631\u0648\u0632 \u062b\u0628\u062a \u0634\u0648\u062f.", None))
@@ -2617,6 +2700,19 @@ class Ui_MainWindow(object):
         ___qtablewidgetitem57 = self.tblHotelToday.horizontalHeaderItem(6)
         ___qtablewidgetitem57.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0627\u0631\u06cc\u062e \u0628\u0631\u0646\u0627\u0645\u0647\u200c\u0631\u06cc\u0632\u06cc\u200c\u0634\u062f\u0647", None))
         self.hotelSections.setTabText(self.hotelSections.indexOf(self.hotelMovementsPage), QCoreApplication.translate("MainWindow", u"\u0648\u0631\u0648\u062f \u0648 \u062e\u0631\u0648\u062c \u0627\u0645\u0631\u0648\u0632", None))
+        self.lblHotelHistoryPerson.setText(QCoreApplication.translate("MainWindow", u"\u0634\u062e\u0635 (\u0646\u0627\u0645 \u06cc\u0627 \u06a9\u062f \u0645\u0644\u06cc):", None))
+        self.txtHotelHistoryPerson.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0646\u0627\u0645\u060c \u0646\u0627\u0645 \u062e\u0627\u0646\u0648\u0627\u062f\u06af\u06cc\u060c \u06a9\u062f \u0645\u0644\u06cc \u06cc\u0627 \u06a9\u062f \u067e\u0631\u0633\u0646\u0644\u06cc", None))
+        self.lblHotelHistoryBuilding.setText(QCoreApplication.translate("MainWindow", u"\u0648\u0627\u062d\u062f/\u0633\u0627\u062e\u062a\u0645\u0627\u0646:", None))
+        self.btnHotelHistoryApply.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0639\u0645\u0627\u0644 \u0641\u06cc\u0644\u062a\u0631", None))
+        self.btnHotelHistoryClear.setText(QCoreApplication.translate("MainWindow", u"\u067e\u0627\u06a9 \u06a9\u0631\u062f\u0646 \u0641\u06cc\u0644\u062a\u0631", None))
+#if QT_CONFIG(tooltip)
+        self.btnHotelHistoryReport.setToolTip(QCoreApplication.translate("MainWindow", u"\u067e\u06cc\u0634\u200c\u0646\u0645\u0627\u06cc\u0634 \u0686\u0627\u067e \u06af\u0632\u0627\u0631\u0634 \u0628\u0631 \u0627\u0633\u0627\u0633 \u0641\u06cc\u0644\u062a\u0631\u0647\u0627\u06cc \u0627\u0646\u062a\u062e\u0627\u0628\u200c\u0634\u062f\u0647", None))
+#endif // QT_CONFIG(tooltip)
+        self.btnHotelHistoryReport.setText(QCoreApplication.translate("MainWindow", u"\u0686\u0627\u067e \u06af\u0632\u0627\u0631\u0634", None))
+        self.lblHotelHistoryFrom.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0632 \u062a\u0627\u0631\u06cc\u062e:", None))
+        self.txtHotelHistoryFrom.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u062a\u0627\u0631\u06cc\u062e \u0634\u0645\u0633\u06cc \u0634\u0631\u0648\u0639", None))
+        self.lblHotelHistoryTo.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0627 \u062a\u0627\u0631\u06cc\u062e:", None))
+        self.txtHotelHistoryTo.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u062a\u0627\u0631\u06cc\u062e \u0634\u0645\u0633\u06cc \u067e\u0627\u06cc\u0627\u0646", None))
         self.groupHotelHistory.setTitle(QCoreApplication.translate("MainWindow", u"\u0633\u0648\u0627\u0628\u0642 \u0627\u0642\u0627\u0645\u062a (\u0627\u0637\u0644\u0627\u0639\u0627\u062a \u062d\u0630\u0641 \u0646\u0645\u06cc\u200c\u0634\u0648\u062f)", None))
         ___qtablewidgetitem58 = self.tblHotelHistory.horizontalHeaderItem(0)
         ___qtablewidgetitem58.setText(QCoreApplication.translate("MainWindow", u"\u0634\u0646\u0627\u0633\u0647", None))
@@ -2724,6 +2820,7 @@ class Ui_MainWindow(object):
         self.menuUsers.setTitle(QCoreApplication.translate("MainWindow", u"\u06a9\u0627\u0631\u0628\u0631\u0627\u0646", None))
         self.menuRepairs.setTitle(QCoreApplication.translate("MainWindow", u"\u062a\u0639\u0645\u06cc\u0631\u0627\u062a", None))
         self.menuEquipment.setTitle(QCoreApplication.translate("MainWindow", u"\u062a\u062c\u0647\u06cc\u0632\u0627\u062a \u0648 \u0627\u0645\u0648\u0627\u0644", None))
+        self.menuHotel.setTitle(QCoreApplication.translate("MainWindow", u"\u0627\u062a\u0627\u0642\u062f\u0627\u0631\u06cc", None))
         self.menuStationery.setTitle(QCoreApplication.translate("MainWindow", u"\u0644\u0648\u0627\u0632\u0645\u200c\u0627\u0644\u062a\u062d\u0631\u06cc\u0631", None))
         self.menuReports.setTitle(QCoreApplication.translate("MainWindow", u"\u06af\u0632\u0627\u0631\u0634\u200c\u0647\u0627", None))
         self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", u"\u0631\u0627\u0647\u0646\u0645\u0627", None))

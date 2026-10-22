@@ -3681,7 +3681,7 @@ class MainWindow(QMainWindow):
         search = normalize_digits(self.ui.txtAmvalSearch.text().strip()).casefold()
         unit_code = str(self.ui.cmbAmvalUnitFilter.currentData() or "").strip()
         active = self.ui.cmbAmvalActiveFilter.currentText().strip()
-        unit_col = self._amval_col("Cd_Vahed", "CD_VAHED")
+        unit_col = self._amval_col("Code")
         status_col = self._amval_col("Vazeiyat", "Vaziyat", "Status")
         filtered = []
         for row in rows:
@@ -3704,7 +3704,7 @@ class MainWindow(QMainWindow):
         return filtered
 
     def _amval_refresh_unit_filters(self, rows):
-        unit_col = self._amval_col("Cd_Vahed", "CD_VAHED")
+        unit_col = self._amval_col("Code")
         name_col = self._amval_col("vahed", "VAHED")
         old = self.ui.cmbAmvalUnitFilter.currentData()
         self.ui.cmbAmvalUnitFilter.blockSignals(True)
@@ -3784,7 +3784,7 @@ class MainWindow(QMainWindow):
     def clear_amval_fields(self):
         for name in ("txtAmvalID", "txtAmvalAssetNo", "txtAmvalDescription", "txtAmvalStatus", "txtAmvalMahal",
                      "txtAmvalSerial", "txtAmvalLocCode", "txtAmvalInvDate", "txtAmvalExitDate", "txtAmvalAcqDate",
-                     "txtAmvalLoc", "txtAmvalBudget", "txtAmvalManUser",
+                     "txtAmvalLoc", "txtAmvalBudget", "txtAmvalManUser", "txtAmvalUnitCode",
                      "txtAmvalRecorder", "txtAmvalEditor"):
             getattr(self.ui, name).clear()
         self.ui.txtAmvalNotes.clear()
@@ -3822,6 +3822,7 @@ class MainWindow(QMainWindow):
         field = col("NOTATIONS")
         self.ui.txtAmvalNotes.setPlainText(self._amval_text(row.get(field)) if field else "")
         set_line("txtAmvalManUser", "MANUSERL")
+        set_line("txtAmvalUnitCode", "Code")
         set_line("txtAmvalRecorder", "Recorder")
         set_line("txtAmvalEditor", "Editor")
         unit_field = col("vahed")
@@ -3852,6 +3853,7 @@ class MainWindow(QMainWindow):
             c("BUDGNO"): self.ui.txtAmvalBudget.text(),
             c("NOTATIONS"): self.ui.txtAmvalNotes.toPlainText(),
             c("vahed"): self.ui.cmbAmvalUnit.currentText().strip(),
+            c("Code"): self.ui.txtAmvalUnitCode.text(),
             c("MANUSERL"): self.ui.txtAmvalManUser.text(),
             c("Recorder"): self.ui.txtAmvalRecorder.text() or self.username,
             c("Editor"): self.username,

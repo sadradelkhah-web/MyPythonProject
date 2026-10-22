@@ -1,0 +1,66 @@
+name: Fix Amval duplicate code field
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch Amval UI and code
+        shell: python
+        run: |
+          from pathlib import Path
+
+          ui = Path('main.ui')
+          py = Path('main.py')
+
+          ui_text = ui.read_text(encoding='utf-8')
+          py_text = py.read_text(encoding='utf-8')
+
+          old_ui = '''           <item row="5" column="0">\n            <widget class="QLabel" name="lblAmvalCode">\n             <property name="text">\n              <string>کد (Code):</string>\n             </property>\n            </widget>\n           </item>\n           <item row="5" column="1">\n            <widget class="QLineEdit" name="txtAmvalCode" />\n           </item>\n'''
+          if old_ui not in ui_text:
+              raise SystemExit('Expected duplicate Amval code UI block was not found.')
+          ui_text = ui_text.replace(old_ui, '', 1)
+          ui.write_text(ui_text, encoding='utf-8')
+
+          old_clear = '''                     "txtAmvalLoc", "txtAmvalBudget", "txtAmvalManUser", "txtAmvalCode",\n                     "txtAmvalCdVahed", "txtAmvalRecorder", "txtAmvalEditor"):\n'''
+          new_clear = '''                     "txtAmvalLoc", "txtAmvalBudget", "txtAmvalManUser",\n                     "txtAmvalCdVahed", "txtAmvalRecorder", "txtAmvalEditor"):\n'''
+          if old_clear not in py_text:
+              raise SystemExit('Expected txtAmvalCode clear block was not found.')
+          py_text = py_text.replace(old_clear, new_clear, 1)
+
+          old_select = '''        set_line("txtAmvalManUser", "MANUSERL")\n        set_line("txtAmvalCode", "Code")\n        set_line("txtAmvalCdVahed", "Cd_Vahed")\n'''
+          new_select = '''        set_line("txtAmvalManUser", "MANUSERL")\n        set_line("txtAmvalCdVahed", "Cd_Vahed")\n'''
+          if old_select not in py_text:
+              raise SystemExit('Expected txtAmvalCode selection block was not found.')
+          py_text = py_text.replace(old_select, new_select, 1)
+
+          old_collect = '''            c("vahed"): self.ui.cmbAmvalUnit.currentText().strip(),\n            c("Code"): self.ui.txtAmvalCode.text(),\n            c("Cd_Vahed"): self.ui.txtAmvalCdVahed.text(),\n'''
+          new_collect = '''            c("vahed"): self.ui.cmbAmvalUnit.currentText().strip(),\n            c("Cd_Vahed"): self.ui.txtAmvalCdVahed.text(),\n'''
+          if old_collect not in py_text:
+              raise SystemExit('Expected txtAmvalCode collection block was not found.')
+          py_text = py_text.replace(old_collect, new_collect, 1)
+
+          py.write_text(py_text, encoding='utf-8')
+
+          if 'txtAmvalCode' in py_text or 'name="txtAmvalCode"' in ui_text:
+              raise SystemExit('Duplicate Amval code field still has references.')
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add main.ui main.py
+          git rm .github/workflows/fix-amval-duplicate-code.yml
+          git commit -m "Remove duplicate asset code field from Amval tab"
+          git push

@@ -2728,6 +2728,117 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
              <number>8</number>
             </property>
             <item>
+             <layout class="QHBoxLayout" name="horizontalLayoutHotelHistoryPersonFilters">
+              <item>
+               <widget class="QLabel" name="lblHotelHistoryPerson">
+                <property name="text">
+                 <string>شخص (نام یا کد ملی):</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="txtHotelHistoryPerson">
+                <property name="placeholderText">
+                 <string>نام، نام خانوادگی، کد ملی یا کد پرسنلی</string>
+                </property>
+                <property name="clearButtonEnabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="lblHotelHistoryBuilding">
+                <property name="text">
+                 <string>واحد/ساختمان:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="cmbHotelHistoryBuilding"/>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnHotelHistoryApply">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>36</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>اعمال فیلتر</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnHotelHistoryClear">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>36</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>پاک کردن فیلتر</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnHotelHistoryReport">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>36</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>پیش‌نمایش چاپ گزارش بر اساس فیلترهای انتخاب‌شده</string>
+                </property>
+                <property name="text">
+                 <string>چاپ گزارش</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayoutHotelHistoryDateFilters">
+              <item>
+               <widget class="QLabel" name="lblHotelHistoryFrom">
+                <property name="text">
+                 <string>از تاریخ:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="txtHotelHistoryFrom">
+                <property name="placeholderText">
+                 <string>تاریخ شمسی شروع</string>
+                </property>
+                <property name="clearButtonEnabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="lblHotelHistoryTo">
+                <property name="text">
+                 <string>تا تاریخ:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="txtHotelHistoryTo">
+                <property name="placeholderText">
+                 <string>تاریخ شمسی پایان</string>
+                </property>
+                <property name="clearButtonEnabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
              <widget class="QGroupBox" name="groupHotelHistory">
               <property name="title">
                <string>سوابق اقامت (اطلاعات حذف نمی‌شود)</string>

@@ -4770,7 +4770,10 @@ class MainWindow(QMainWindow):
                 "ثبت پیگیری و تکمیل کار فقط برای واحد تعمیرات عمومی یا SuperAdmin مجاز است."
             )
 
-        self.ui.btnRefreshReport.clicked.connect(self.load_report_data)
+        self.ui.btnRefreshReport.setToolTip("اعمال فیلترها و نمایش گزارش کارهای تعمیراتی")
+        self.ui.btnRefreshReport.clicked.connect(
+            lambda checked=False: self.load_report_data()
+        )
         self.ui.btnClearReportFilters.clicked.connect(self.clear_report_filters)
         self.ui.txtReportSearch.textChanged.connect(self.load_report_data)
         self.ui.cmbReportUnit.currentIndexChanged.connect(self.load_report_data)
@@ -4993,8 +4996,16 @@ class MainWindow(QMainWindow):
         from_date = self._read_report_filter_date(self.ui.txtReportFrom)
         to_date = self._read_report_filter_date(self.ui.txtReportTo)
         if from_date == "INVALID" or to_date == "INVALID":
+            QMessageBox.warning(
+                self, "تاریخ نامعتبر",
+                "تاریخ شروع یا پایان معتبر نیست. تاریخ شمسی را به شکل 1405/07/18 وارد کنید؛ برای نمایش همه تاریخ‌ها، فیلد را خالی بگذارید."
+            )
             return
         if from_date and to_date and from_date > to_date:
+            QMessageBox.warning(
+                self, "بازه تاریخ نامعتبر",
+                "تاریخ «از تاریخ» نباید بعد از «تا تاریخ» باشد."
+            )
             return
         wanted_status = self.ui.cmbReportStatus.currentText()
 

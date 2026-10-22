@@ -2506,25 +2506,13 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
                 <widget class="QLineEdit" name="txtHotelEmployee" />
                </item>
                <item row="2" column="0" colspan="2">
-                <widget class="QCheckBox" name="chkHotelBreakfast">
-                 <property name="text">
-                  <string>صبحانه</string>
-                 </property>
-                </widget>
+                <widget class="QSpinBox" name="chkHotelBreakfast"><property name="minimum"><number>0</number></property><property name="maximum"><number>9999</number></property><property name="value"><number>0</number></property><property name="toolTip"><string>تعداد صبحانه مصرف‌شده در کل مدت اقامت</string></property></widget>
                </item>
                <item row="2" column="2" colspan="2">
-                <widget class="QCheckBox" name="chkHotelLunch">
-                 <property name="text">
-                  <string>ناهار</string>
-                 </property>
-                </widget>
+                <widget class="QSpinBox" name="chkHotelLunch"><property name="minimum"><number>0</number></property><property name="maximum"><number>9999</number></property><property name="value"><number>0</number></property><property name="toolTip"><string>تعداد ناهار مصرف‌شده در کل مدت اقامت</string></property></widget>
                </item>
                <item row="2" column="4" colspan="2">
-                <widget class="QCheckBox" name="chkHotelDinner">
-                 <property name="text">
-                  <string>شام</string>
-                 </property>
-                </widget>
+                <widget class="QSpinBox" name="chkHotelDinner"><property name="minimum"><number>0</number></property><property name="maximum"><number>9999</number></property><property name="value"><number>0</number></property><property name="toolTip"><string>تعداد شام مصرف‌شده در کل مدت اقامت</string></property></widget>
                </item>
                <item row="3" column="2" colspan="1">
                 <widget class="QLabel" name="lblHotelActualArrival">

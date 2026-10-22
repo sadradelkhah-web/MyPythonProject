@@ -37,6 +37,7 @@ from PySide6.QtWidgets import (
 
 from ui_main import Ui_MainWindow
 from db_config import get_connection
+from database_backup import create_database_backup
 from user_management import UserManagement
 from tab_permissions import get_user_permissions, apply_tab_permissions
 from user_permissions import open_user_permissions_dialog
@@ -5642,3 +5643,31 @@ class MainWindow(QMainWindow):
             else:
                 date_widget.clear()
         self.load_report_data()
+
+    def closeEvent(self, event):
+        """در خروج عادی برنامه، فقط برای SuperAdmin از دیتابیس محلی نسخه پشتیبان می‌گیرد."""
+        if not self.is_master:
+            event.accept()
+            return
+
+        # جلوگیری از اجرای دوباره پشتیبان‌گیری در رویداد خروج تکراری.
+        if getattr(self, "_exit_backup_attempted", False):
+            event.accept()
+            return
+        self._exit_backup_attempted = True
+
+        success, message, _backup_path = create_database_backup()
+        if success:
+            QMessageBox.information(
+                self,
+                "پشتیبان‌گیری دیتابیس",
+                message,
+            )
+        else:
+            QMessageBox.warning(
+                self,
+                "پشتیبان‌گیری انجام نشد",
+                message + "\n\nبرنامه بسته می‌شود؛ دیتابیس اصلی تغییر نکرده است.",
+            )
+
+        event.accept()

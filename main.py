@@ -280,6 +280,20 @@ class JalaliDateLineEdit(QLineEdit):
 # تبدیل ارقام فارسی و عربی به انگلیسی
 # ==================================================
 
+def format_numeric_display(value):
+    """نمایش عدد بدون صفرهای اعشاری غیرضروری، بدون گرد کردن اعداد واقعی."""
+    if value is None:
+        return ""
+    text = str(value).strip()
+    # فقط مقادیر عددی ساده را تغییر می‌دهیم؛ تاریخ‌ها و متن‌ها دست‌نخورده می‌مانند.
+    match = re.fullmatch(r"([+-]?\d+)\.(\d+)", text)
+    if not match:
+        return text
+    integer_part, fraction_part = match.groups()
+    fraction_part = fraction_part.rstrip("0")
+    return integer_part if not fraction_part else f"{integer_part}.{fraction_part}"
+
+
 def normalize_digits(value):
     if value is None:
         return ""
@@ -1583,7 +1597,7 @@ class MainWindow(QMainWindow):
                                 + value[6:]
                             )
 
-                    item = QTableWidgetItem(str(value))
+                    item = QTableWidgetItem(format_numeric_display(value))
 
                     item.setTextAlignment(
                         Qt.AlignmentFlag.AlignCenter
@@ -1897,7 +1911,7 @@ class MainWindow(QMainWindow):
                 idx = table.rowCount()
                 table.insertRow(idx)
                 for col, value in enumerate(values):
-                    table.setItem(idx, col, QTableWidgetItem(str(value)))
+                    table.setItem(idx, col, QTableWidgetItem(format_numeric_display(value)))
                 table.item(idx, 0).setData(Qt.ItemDataRole.UserRole, row.get(id_col) if id_col else None)
 
     @staticmethod
@@ -2423,7 +2437,7 @@ class MainWindow(QMainWindow):
             row_idx = table.rowCount()
             table.insertRow(row_idx)
             for col_idx, value in enumerate(values):
-                table.setItem(row_idx, col_idx, QTableWidgetItem(str(value)))
+                table.setItem(row_idx, col_idx, QTableWidgetItem(format_numeric_display(value)))
             table.item(row_idx, 0).setData(Qt.ItemDataRole.UserRole, room_row.get(self._hotel_pick(room_row, "ID", "id")))
             if grid:
                 if status == "خالی":
@@ -3226,7 +3240,7 @@ class MainWindow(QMainWindow):
             for i, row in enumerate(self._anbar_tahrir_rows):
                 values = [i + 1, row[1], row[2], row[3]]
                 for j, value in enumerate(values):
-                    item = QTableWidgetItem("" if value is None else str(value))
+                    item = QTableWidgetItem(format_numeric_display(value))
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                     table.setItem(i, j, item)
             table.resizeColumnsToContents()
@@ -3345,7 +3359,7 @@ class MainWindow(QMainWindow):
             for i,r in enumerate(filtered):
                 values=[i + 1, self._tahrir_display_date(r[1]), r[2], r[3], r[4], r[5], r[6], r[7], r[8]]
                 for j,value in enumerate(values):
-                    item=QTableWidgetItem("" if value is None else str(value)); item.setTextAlignment(Qt.AlignmentFlag.AlignCenter); table.setItem(i,j,item)
+                    item=QTableWidgetItem(format_numeric_display(value)); item.setTextAlignment(Qt.AlignmentFlag.AlignCenter); table.setItem(i,j,item)
             table.resizeColumnsToContents()
             if selected is not None:
                 for i,r in enumerate(filtered):
@@ -3629,7 +3643,7 @@ class MainWindow(QMainWindow):
                 return value.strftime("%Y/%m/%d")
             except Exception:
                 pass
-        return str(value).strip()
+        return format_numeric_display(value)
 
     def _amval_get_schema(self, cursor):
         if self._amval_schema is not None:
@@ -4125,7 +4139,7 @@ class MainWindow(QMainWindow):
             return ""
         if isinstance(value, (bytes, bytearray, memoryview)):
             return "دارد" if len(value) else "ندارد"
-        return str(value)
+        return format_numeric_display(value)
 
     @staticmethod
     def _mesc_decode_image(data):

@@ -910,6 +910,7 @@ class MainWindow(QMainWindow):
             ("ورود ناموفق", "LoginFailed"),
             ("خروج", "Logout"),
             ("شروع نشست", "SessionStart"),
+            ("تغییر رمز عبور", "PasswordChange"),
             ("ثبت", "Create"),
             ("ویرایش", "Update"),
             ("حذف", "Delete"),
@@ -1006,6 +1007,8 @@ class MainWindow(QMainWindow):
                 if action != "Login" or str(record[8] or "").casefold() != "failed":
                     continue
             elif wanted_action and action != wanted_action:
+                continue
+            if wanted_action == "Login" and str(record[8] or "").casefold() != "success":
                 continue
             rows.append(record)
 

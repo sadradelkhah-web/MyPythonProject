@@ -38,6 +38,7 @@ from PySide6.QtWidgets import (
 from ui_main import Ui_MainWindow
 from db_config import get_connection
 from database_backup import create_database_backup
+from user_activity_log import log_user_event
 from user_management import UserManagement
 from tab_permissions import get_user_permissions, apply_tab_permissions
 from user_permissions import open_user_permissions_dialog
@@ -462,6 +463,7 @@ class MainWindow(QMainWindow):
         # اجرای مجدد پس از ساخته‌شدن همه تب‌ها؛ تب‌ها در زمان اجرای setup ساخته می‌شوند.
         self._configure_responsive_window()
         self.showMaximized()
+        log_user_event(self.username, "SessionStart", "ورود و خروج", "شروع نشست کاربری", result="Success")
 
     def _configure_responsive_window(self):
         """Adapt the main window to the current screen and Windows display scaling."""
@@ -650,6 +652,15 @@ class MainWindow(QMainWindow):
         # دکمه تعیین مجوزها در خود main.ui تعریف شده تا در Qt Designer قابل ویرایش باشد.
         self.ui.btnTabPermissions.setVisible(self.is_master)
         self.ui.btnTabPermissions.clicked.connect(self.manage_user_permissions)
+
+        self.btnUserActivityLog = QPushButton("گزارش فعالیت کاربران", self.ui.navigationPanel)
+        self.btnUserActivityLog.setObjectName("btnUserActivityLog")
+        self.btnUserActivityLog.setMinimumHeight(42)
+        self.btnUserActivityLog.setVisible(self.is_master)
+        nav_layout = self.ui.verticalLayoutNavigation
+        permission_index = nav_layout.indexOf(self.ui.btnTabPermissions)
+        nav_layout.insertWidget(permission_index + 1 if permission_index >= 0 else nav_layout.count(), self.btnUserActivityLog)
+        self.btnUserActivityLog.clicked.connect(self.open_user_activity_log)
 
         self.ui.btnRepairs.clicked.connect(lambda: self.open_page(self.ui.tabKar))
         self.ui.btnAssets.clicked.connect(lambda: self.open_page(self.ui.tabAmval))
@@ -854,6 +865,172 @@ class MainWindow(QMainWindow):
             return
         if not self._page_allowed(page):
             self.show_home()
+
+
+    def open_user_activity_log(self):
+        """گزارش فعالیت‌ها فقط برای SuperAdmin قابل مشاهده است."""
+        if not self.is_master:
+            QMessageBox.warning(self, "عدم دسترسی", "مشاهده گزارش فعالیت کاربران فقط برای SuperAdmin مجاز است.")
+            return
+        if not hasattr(self, "user_activity_log_page"):
+            self.setup_user_activity_log_page()
+        self.load_user_activity_log()
+        self.show_page(self.user_activity_log_page)
+
+    def setup_user_activity_log_page(self):
+        """ساخت صفحه گزارش فعالیت از طریق کد؛ نیازی به تغییر main.ui نیست."""
+        self.user_activity_log_page = QWidget(self)
+        self.user_activity_log_page.setObjectName("pageUserActivityLog")
+        self.user_activity_log_page.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self._main_tab_titles[self.user_activity_log_page] = "گزارش فعالیت کاربران"
+
+        root = QVBoxLayout(self.user_activity_log_page)
+        root.setContentsMargins(12, 12, 12, 12)
+        root.setSpacing(8)
+
+        actions = QHBoxLayout()
+        back_button = QPushButton("بازگشت به صفحه اصلی")
+        back_button.setMinimumHeight(36)
+        back_button.clicked.connect(
+            lambda checked=False: self.close_main_tab(self.user_activity_log_page)
+        )
+        title = QLabel("گزارش فعالیت کاربران")
+        title.setStyleSheet("font-size: 16pt; font-weight: bold;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        actions.addWidget(back_button)
+        actions.addWidget(title, 1)
+
+        self.txtActivityLogUser = QLineEdit()
+        self.txtActivityLogUser.setPlaceholderText("جست‌وجو بر اساس نام کاربری")
+        self.txtActivityLogUser.setClearButtonEnabled(True)
+        self.cmbActivityLogAction = QComboBox()
+        self.cmbActivityLogAction.addItem("همه عملیات", "")
+        for label, action_code in (
+            ("ورود موفق", "Login"),
+            ("ورود ناموفق", "LoginFailed"),
+            ("خروج", "Logout"),
+            ("شروع نشست", "SessionStart"),
+            ("ثبت", "Create"),
+            ("ویرایش", "Update"),
+            ("حذف", "Delete"),
+            ("تحویل", "Deliver"),
+            ("تمدید اقامت", "ExtendStay"),
+            ("ثبت ورود مهمان", "CheckIn"),
+            ("ثبت خروج مهمان", "CheckOut"),
+            ("ثبت پیگیری", "Track"),
+            ("تغییر ظرفیت اتاق", "RoomCapacityChange"),
+        ):
+            self.cmbActivityLogAction.addItem(label, action_code)
+
+        self.btnActivityLogRefresh = QPushButton("به‌روزرسانی")
+        self.btnActivityLogRefresh.setMinimumHeight(34)
+        self.btnActivityLogRefresh.clicked.connect(self.load_user_activity_log)
+        self.txtActivityLogUser.textChanged.connect(self._filter_user_activity_log)
+        self.cmbActivityLogAction.currentIndexChanged.connect(self._filter_user_activity_log)
+
+        filters = QHBoxLayout()
+        filters.addWidget(QLabel("کاربر:"))
+        filters.addWidget(self.txtActivityLogUser, 2)
+        filters.addWidget(QLabel("نوع عملیات:"))
+        filters.addWidget(self.cmbActivityLogAction, 1)
+        filters.addWidget(self.btnActivityLogRefresh)
+        root.addLayout(actions)
+        root.addLayout(filters)
+
+        self.tblUserActivityLog = QTableWidget(self.user_activity_log_page)
+        self.tblUserActivityLog.setColumnCount(9)
+        self.tblUserActivityLog.setHorizontalHeaderLabels([
+            "شناسه", "نام کاربری", "نوع عملیات", "بخش", "شرح فعالیت",
+            "شناسه رکورد", "تاریخ و ساعت", "نام کامپیوتر", "نتیجه"
+        ])
+        self.tblUserActivityLog.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tblUserActivityLog.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tblUserActivityLog.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tblUserActivityLog.setAlternatingRowColors(True)
+        self.tblUserActivityLog.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.tblUserActivityLog.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        for col, width in enumerate((65, 120, 105, 120, 330, 90, 150, 130, 90)):
+            self.tblUserActivityLog.setColumnWidth(col, width)
+        root.addWidget(self.tblUserActivityLog, 1)
+        self.lblActivityLogCount = QLabel("برای دریافت گزارش، دکمه به‌روزرسانی را بزنید.")
+        root.addWidget(self.lblActivityLogCount)
+        self._activity_log_rows = []
+
+    def load_user_activity_log(self, *_args):
+        """آخرین ۱۰۰۰ رویداد را می‌خواند و فیلترهای صفحه را اعمال می‌کند."""
+        if not self.is_master:
+            return
+        conn = cursor = None
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT TOP 1000 [ID], [Username], [ActionType], [ModuleName],
+                       [Description], [RecordID], [EventDateTime], [ComputerName], [Result]
+                FROM [LoginEvent]
+                ORDER BY [EventDateTime] DESC, [ID] DESC
+            """)
+            self._activity_log_rows = [tuple(row) for row in cursor.fetchall()]
+        except Exception as exc:
+            QMessageBox.warning(
+                self, "گزارش فعالیت کاربران",
+                f"خواندن جدول LoginEvent ناموفق بود. نام و نوع فیلدها را بررسی کنید.\n\n{exc}"
+            )
+            self._activity_log_rows = []
+        finally:
+            if cursor is not None:
+                try:
+                    cursor.close()
+                except Exception:
+                    pass
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+        self._filter_user_activity_log()
+
+    def _filter_user_activity_log(self, *_args):
+        if not hasattr(self, "tblUserActivityLog"):
+            return
+        wanted_user = self.txtActivityLogUser.text().strip().casefold()
+        wanted_action = self.cmbActivityLogAction.currentData()
+        rows = []
+        for record in getattr(self, "_activity_log_rows", []):
+            username = str(record[1] or "")
+            action = str(record[2] or "")
+            if wanted_user and wanted_user not in username.casefold():
+                continue
+            # ورودهای ناموفق نیز به شکل ActionType=Login و Result=Failed ذخیره می‌شوند.
+            if wanted_action == "LoginFailed":
+                if action != "Login" or str(record[8] or "").casefold() != "failed":
+                    continue
+            elif wanted_action and action != wanted_action:
+                continue
+            rows.append(record)
+
+        self.tblUserActivityLog.setRowCount(len(rows))
+        for row_index, record in enumerate(rows):
+            timestamp = record[6]
+            if isinstance(timestamp, datetime):
+                try:
+                    jalali_dt = jdatetime.datetime.fromgregorian(datetime=timestamp)
+                    timestamp_text = jalali_dt.strftime("%Y/%m/%d %H:%M:%S")
+                except Exception:
+                    timestamp_text = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                timestamp_text = str(timestamp or "")
+            values = [
+                record[0], record[1], record[2], record[3], record[4],
+                record[5], timestamp_text, record[7], record[8]
+            ]
+            for col, value in enumerate(values):
+                self.tblUserActivityLog.setItem(
+                    row_index, col, QTableWidgetItem("" if value is None else str(value))
+                )
+        self.lblActivityLogCount.setText(
+            f"تعداد رویدادهای نمایش‌داده‌شده: {len(rows)} از حداکثر ۱۰۰۰ رویداد اخیر"
+        )
 
     def open_user_management(self):
         # تب «مدیریت کاربران» فقط برای SuperAdmin مجاز است.
@@ -1413,6 +1590,11 @@ class MainWindow(QMainWindow):
             ))
 
             conn.commit()
+            log_user_event(
+                self.username, "Create", "درخواست کار",
+                f"ثبت درخواست شماره {wonumber}؛ موضوع: {mozooe}",
+                record_id=wonumber, result="Success",
+            )
 
             QMessageBox.information(
                 self,
@@ -3041,6 +3223,11 @@ class MainWindow(QMainWindow):
                 conn.commit()
             finally: conn.close()
             self._hotel_load_all(); self._hotel_clear_form()
+            log_user_event(
+                self.username, "Create", "اتاق‌داری",
+                f"ثبت اقامت مهمان {first} {family}؛ ساختمان {building}، اتاق {room}",
+                result="Success",
+            )
             QMessageBox.information(self,"ثبت اقامت", "مهمان ثبت شد و ورود واقعی او نیز ثبت گردید؛ اتاق اشغال شد." if checkin_now else "اطلاعات اقامت ثبت شد و در سوابق باقی می‌ماند.")
         except Exception as exc:
             QMessageBox.critical(self,"خطای ثبت اقامت",f"ثبت در tblHotel انجام نشد:\n{exc}\n\nممکن است فیلد اجباری دیگری در دیتابیس وجود داشته باشد.")
@@ -3191,6 +3378,11 @@ class MainWindow(QMainWindow):
             updated = next((r for r in self._hotel_guests if str(r.get(self._hotel_pick(r, 'ID', 'id'))) == str(guest_id)), None)
             if updated:
                 self._hotel_fill_form_from_guest(updated)
+            log_user_event(
+                self.username, "Update", "اتاق‌داری",
+                f"ویرایش اقامت مهمان {first} {family}؛ ساختمان {building}، اتاق {room}",
+                record_id=guest_id, result="Success",
+            )
             QMessageBox.information(self, "ویرایش اقامت", "اطلاعات مهمان با موفقیت ویرایش و ذخیره شد.")
         except Exception as exc:
             if conn is not None:
@@ -3294,6 +3486,11 @@ class MainWindow(QMainWindow):
                             if str(r.get(self._hotel_pick(r, "ID", "id"))) == str(guest_id)), None)
             if updated:
                 self._hotel_fill_form_from_guest(updated)
+            log_user_event(
+                self.username, "ExtendStay", "اتاق‌داری",
+                f"تمدید اقامت اتاق {room} تا {self.ui.txtHotelDeparture.text()}",
+                record_id=guest_id, result="Success",
+            )
             QMessageBox.information(self, "تمدید اقامت", f"اقامت اتاق {room} تا تاریخ {self.ui.txtHotelDeparture.text()} تمدید شد. تاریخ خروج واقعی تغییری نکرده است.")
         except Exception as exc:
             if conn is not None:
@@ -3436,6 +3633,13 @@ class MainWindow(QMainWindow):
                 conn.commit()
             finally:conn.close()
             self._hotel_load_all()
+            log_user_event(
+                self.username,
+                "CheckIn" if action == "checkin" else "CheckOut",
+                "اتاق‌داری",
+                f"ثبت {'ورود واقعی' if action == 'checkin' else 'خروج واقعی'} مهمان؛ ساختمان {building}، اتاق {room}",
+                record_id=rid, result="Success",
+            )
             QMessageBox.information(self,"ثبت ورود/خروج", "تاریخ واقعی ورود ثبت شد." if action=="checkin" else "تاریخ واقعی خروج ثبت شد؛ سابقه اقامت حذف نشده است.")
         except Exception as exc: QMessageBox.critical(self,"خطای ثبت",str(exc))
 
@@ -5591,6 +5795,11 @@ class MainWindow(QMainWindow):
                 except Exception:
                     pass
 
+        log_user_event(
+            self.username, "Track", "گزارش و پیگیری",
+            f"ثبت پیگیری درخواست {wonumber}؛ وضعیت: {status}",
+            record_id=wonumber, result="Success",
+        )
         QMessageBox.information(
             self, "ثبت شد",
             "نتیجه پایان کار ثبت شد؛ فیلدهای payan، tarikh و editor نیز به‌روزرسانی شدند."
@@ -5662,6 +5871,10 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """هنگام خروج عادی، برای SuperAdmin بی‌صدا یک نسخه پشتیبان می‌سازد."""
+        log_user_event(
+            self.username, "Logout", "ورود و خروج",
+            "خروج از سامانه", result="Success",
+        )
         if self.is_master and not getattr(self, "_exit_backup_attempted", False):
             self._exit_backup_attempted = True
             try:

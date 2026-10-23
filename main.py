@@ -2821,6 +2821,11 @@ class MainWindow(QMainWindow):
             if conn is not None:
                 conn.close()
         self._hotel_load_all()
+        log_user_event(
+            self.username, "RoomCapacityChange", "اتاق‌داری",
+            f"تغییر ظرفیت ساختمان {building}، اتاق {room} به {capacity} نفر",
+            result="Success",
+        )
         QMessageBox.information(self, "ظرفیت اتاق", f"ظرفیت اتاق {room} به {capacity} نفر تغییر کرد.")
 
     def _hotel_open_room_for_reception(self, building, room):
@@ -3896,6 +3901,10 @@ class MainWindow(QMainWindow):
             conn = get_connection(); cur = conn.cursor()
             cur.execute("INSERT INTO [TBL_Anbar_Tahrir] ([Description], [QTY], [Unit]) VALUES (?, ?, ?)", (description, qty, unit))
             conn.commit(); conn.close()
+            log_user_event(
+                self.username, "Create", "انبار لوازم‌التحریر",
+                f"ثبت کالای انبار: {description}، مقدار {qty} {unit}", result="Success",
+            )
             self.load_anbar_tahrir_items(); self.clear_anbar_tahrir_form()
             self._refresh_tahrir_description_completer()
             QMessageBox.information(self, "انبار لوازم‌التحریر", "کالا با موفقیت ثبت شد.")
@@ -3909,7 +3918,13 @@ class MainWindow(QMainWindow):
             description, qty, unit = self._anbar_tahrir_values()
             conn = get_connection(); cur = conn.cursor()
             cur.execute("UPDATE [TBL_Anbar_Tahrir] SET [Description]=?, [QTY]=?, [Unit]=? WHERE [ID]=?", (description, qty, unit, self._anbar_tahrir_id))
-            conn.commit(); conn.close(); self.load_anbar_tahrir_items()
+            conn.commit(); conn.close()
+            log_user_event(
+                self.username, "Update", "انبار لوازم‌التحریر",
+                f"ویرایش کالای انبار با شناسه {self._anbar_tahrir_id}: {description}، مقدار {qty} {unit}",
+                record_id=self._anbar_tahrir_id, result="Success",
+            )
+            self.load_anbar_tahrir_items()
             self._refresh_tahrir_description_completer()
             QMessageBox.information(self, "انبار لوازم‌التحریر", "اطلاعات کالا ویرایش شد.")
         except Exception as exc: self._tahrir_db_error("ویرایش کالای انبار", exc)
@@ -3921,7 +3936,13 @@ class MainWindow(QMainWindow):
         try:
             conn = get_connection(); cur = conn.cursor()
             cur.execute("DELETE FROM [TBL_Anbar_Tahrir] WHERE [ID]=?", (self._anbar_tahrir_id,))
-            conn.commit(); conn.close(); self.clear_anbar_tahrir_form(); self.load_anbar_tahrir_items()
+            conn.commit(); conn.close()
+            log_user_event(
+                self.username, "Delete", "انبار لوازم‌التحریر",
+                f"حذف کالای انبار با شناسه {self._anbar_tahrir_id}",
+                record_id=self._anbar_tahrir_id, result="Success",
+            )
+            self.clear_anbar_tahrir_form(); self.load_anbar_tahrir_items()
             self._refresh_tahrir_description_completer()
         except Exception as exc: self._tahrir_db_error("حذف کالای انبار", exc)
 
@@ -4069,6 +4090,11 @@ class MainWindow(QMainWindow):
             conn.commit()
             conn.close()
             conn = None
+            log_user_event(
+                self.username, "Deliver", "انبار لوازم‌التحریر",
+                f"ثبت درخواست و تحویل لوازم‌التحریر: {desc}، تعداد {qty} {unit}؛ تحویل‌گیرنده {recipient}",
+                result="Success",
+            )
             self.load_anbar_tahrir_items()
             self.load_mto_tahrir_requests()
             self.clear_mto_tahrir_form()
@@ -4114,6 +4140,11 @@ class MainWindow(QMainWindow):
             conn.commit()
             conn.close()
             conn = None
+            log_user_event(
+                self.username, "Update", "انبار لوازم‌التحریر",
+                f"ویرایش درخواست و ثبت تحویل: {desc}، تعداد {qty} {unit}؛ تحویل‌گیرنده {recipient}",
+                record_id=self._mto_tahrir_id, result="Success",
+            )
             self.load_anbar_tahrir_items()
             self.load_mto_tahrir_requests()
             QMessageBox.information(self, "تحویل لوازم‌التحریر", "درخواست ویرایش و تحویل ثبت شد؛ موجودی انبار کاهش یافت.")
@@ -4135,6 +4166,11 @@ class MainWindow(QMainWindow):
         if QMessageBox.question(self,"حذف درخواست","آیا از حذف درخواست انتخاب‌شده مطمئن هستید؟") != QMessageBox.StandardButton.Yes: return
         try:
             conn=get_connection(); cur=conn.cursor(); cur.execute("DELETE FROM [TBL_Mto_tahrir] WHERE [ID]=?",(self._mto_tahrir_id,)); conn.commit(); conn.close()
+            log_user_event(
+                self.username, "Delete", "انبار لوازم‌التحریر",
+                f"حذف درخواست لوازم‌التحریر با شناسه {self._mto_tahrir_id}",
+                record_id=self._mto_tahrir_id, result="Success",
+            )
             self.clear_mto_tahrir_form(); self.load_mto_tahrir_requests()
         except Exception as exc: self._tahrir_db_error("حذف درخواست لوازم‌التحریر",exc)
 
@@ -4189,6 +4225,11 @@ class MainWindow(QMainWindow):
             )
             conn.commit()
             conn.close()
+            log_user_event(
+                self.username, "Deliver", "انبار لوازم‌التحریر",
+                f"ثبت تحویل درخواست لوازم‌التحریر؛ تحویل‌گیرنده {recipient}",
+                record_id=self._mto_tahrir_id, result="Success",
+            )
             self.load_anbar_tahrir_items()
             self.load_mto_tahrir_requests()
             QMessageBox.information(self, "ثبت تحویل", "تحویل ثبت شد و موجودی انبار کاهش یافت.")
@@ -4518,6 +4559,11 @@ class MainWindow(QMainWindow):
             marks = ", ".join("?" for _ in fields)
             cursor.execute(f"INSERT INTO [tblAmvall] ({names}) VALUES ({marks})", tuple(data[f] for f in fields))
             conn.commit()
+            log_user_event(
+                self.username, "Create", "اموال",
+                f"ثبت مال؛ شماره اموال {data.get(asset_field) if asset_field else ''}",
+                result="Success",
+            )
             QMessageBox.information(self, "ثبت مال", "اطلاعات مال با موفقیت ثبت شد.")
             self.clear_amval_fields(); self.load_amval_data()
         except Exception as exc:
@@ -4555,6 +4601,12 @@ class MainWindow(QMainWindow):
             assignments = ", ".join(f"[{f}] = ?" for f in fields)
             cursor.execute(f"UPDATE [tblAmvall] SET {assignments} WHERE [{id_field}] = ?", tuple(data[f] for f in fields) + (self._amval_original_id,))
             conn.commit()
+            asset_field = self._amval_col("ASSETNO")
+            log_user_event(
+                self.username, "Update", "اموال",
+                f"ویرایش مال؛ شماره اموال {data.get(asset_field) if asset_field else ''}",
+                record_id=self._amval_original_id, result="Success",
+            )
             QMessageBox.information(self, "ویرایش مال", "تغییرات با موفقیت ذخیره شد.")
             self.clear_amval_fields(); self.load_amval_data()
         except Exception as exc:
@@ -4585,6 +4637,11 @@ class MainWindow(QMainWindow):
             id_field = self._amval_col("ID") or "ID"
             cursor.execute(f"DELETE FROM [tblAmvall] WHERE [{id_field}] = ?", (self._amval_original_id,))
             conn.commit()
+            log_user_event(
+                self.username, "Delete", "اموال",
+                f"حذف رکورد اموال با شناسه {self._amval_original_id}",
+                record_id=self._amval_original_id, result="Success",
+            )
             self.clear_amval_fields(); self.load_amval_data()
             QMessageBox.information(self, "حذف مال", "رکورد حذف شد.")
         except Exception as exc:
@@ -5151,6 +5208,10 @@ class MainWindow(QMainWindow):
             cursor.execute("INSERT INTO [mesc] ([mesc], [shohazine], [sharh], [Discription], [unit], [sabtkonande], [Editor], [pic]) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                            (code, shohazine, sharh, description, unit, self.username, "", self._mesc_image_data if self._mesc_image_data else None))
             conn.commit()
+            log_user_event(
+                self.username, "Create", "MESC",
+                f"ثبت رکورد MESC با کد {code}", record_id=code, result="Success",
+            )
             QMessageBox.information(self, "ثبت MESC", "رکورد با موفقیت ثبت شد.")
             self.clear_mesc_fields(); self.load_mesc_data()
         except Exception as exc:
@@ -5192,6 +5253,11 @@ class MainWindow(QMainWindow):
                 cursor.execute("UPDATE [mesc] SET [mesc]=?, [shohazine]=?, [sharh]=?, [Discription]=?, [unit]=?, [Editor]=? WHERE [mesc]=?",
                                (code, shohazine, sharh, description, unit, self.username, old_code))
             conn.commit()
+            log_user_event(
+                self.username, "Update", "MESC",
+                f"ویرایش رکورد MESC؛ کد جدید {code}، کد قبلی {old_code}",
+                record_id=code, result="Success",
+            )
             QMessageBox.information(self, "ویرایش MESC", "تغییرات با موفقیت ذخیره شد.")
             self.clear_mesc_fields(); self.load_mesc_data()
         except Exception as exc:
@@ -5226,6 +5292,10 @@ class MainWindow(QMainWindow):
             conn = get_connection(); cursor = conn.cursor()
             cursor.execute("DELETE FROM [mesc] WHERE [mesc] = ?", (code,))
             conn.commit()
+            log_user_event(
+                self.username, "Delete", "MESC",
+                f"حذف رکورد MESC با کد {code}", record_id=code, result="Success",
+            )
             self.clear_mesc_fields(); self.load_mesc_data()
             QMessageBox.information(self, "حذف MESC", "رکورد حذف شد.")
         except Exception as exc:

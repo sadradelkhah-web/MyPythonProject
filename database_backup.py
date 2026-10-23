@@ -6,10 +6,11 @@ from db_config import DB_PATH
 
 
 def create_database_backup():
-    """یک نسخه ثابت را در پوشه Backups کنار دیتابیس ایجاد یا جایگزین می‌کند.
+    """یک نسخه ثابت از دیتابیس می‌سازد و پس از کپی موفق جایگزین می‌کند.
 
-    اگر دیتابیس باز/قفل باشد یا حین کپی تغییر کند، از جایگزینی نسخه قبلی
-    خودداری می‌شود. خروجی تابع (موفقیت، پیام، مسیر) است؛ رابط کاربری پیامی نشان نمی‌دهد.
+    وجود فایل‌های قفل Access مانع تلاش برای کپی نمی‌شود. اگر کپی خطا بدهد،
+    یا اندازه/زمان تغییر فایل اصلی حین کپی تغییر کند، نسخه قبلی حفظ می‌شود.
+    خروجی تابع (موفقیت، پیام، مسیر) است؛ رابط کاربری پیامی نشان نمی‌دهد.
     """
     temporary_path = None
 
@@ -26,10 +27,6 @@ def create_database_backup():
         if source.suffix.casefold() not in (".mdb", ".accdb") or not source.is_file():
             return False, "فایل دیتابیس معتبر پیدا نشد.", None
 
-        lock_paths = (source.with_suffix(".ldb"), source.with_suffix(".laccdb"))
-        if any(path.exists() for path in lock_paths):
-            return False, "دیتابیس هنوز باز است؛ پشتیبان‌گیری رد شد.", None
-
         backup_dir = source.parent / "Backups"
         backup_dir.mkdir(parents=True, exist_ok=True)
 
@@ -41,14 +38,14 @@ def create_database_backup():
         shutil.copy2(source, temporary_path)
         after = source.stat()
 
+        # اگر فایل اصلی حین کپی تغییر کرده باشد، بکاپ موقت حذف و نسخه قبلی حفظ می‌شود.
         if (
             before.st_size != after.st_size
             or before.st_mtime_ns != after.st_mtime_ns
-            or any(path.exists() for path in lock_paths)
             or temporary_path.stat().st_size != after.st_size
         ):
             temporary_path.unlink(missing_ok=True)
-            return False, "دیتابیس هنگام کپی تغییر کرده یا باز شده است.", None
+            return False, "دیتابیس هنگام کپی تغییر کرده است.", None
 
         # جایگزینی اتمی: در صورت شکست کپی، نسخه قبلی دست‌نخورده می‌ماند.
         temporary_path.replace(backup_path)

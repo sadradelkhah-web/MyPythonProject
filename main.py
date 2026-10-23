@@ -3234,7 +3234,7 @@ class MainWindow(QMainWindow):
 
         arrival = self._hotel_date_db(self.ui.txtHotelArrival.text())
         new_departure = self._hotel_date_db(self.ui.txtHotelDeparture.text())
-        dep_col_guest = self._hotel_pick(guest, "TarikhKhoroj", "departure")
+        dep_col_guest = self._hotel_pick(guest, "TarikhKhoroj", "departure", "تاریخ خروج")
         old_departure = self._hotel_date_db(guest.get(dep_col_guest)) if dep_col_guest else None
         if not arrival or not new_departure:
             QMessageBox.warning(self, "تاریخ نامعتبر", "تاریخ ورود و خروج مورد انتظار را به شکل شمسی وارد کنید؛ مثال 1405/07/18.")
@@ -3253,11 +3253,27 @@ class MainWindow(QMainWindow):
             conn = get_connection()
             cursor = conn.cursor()
             schema = self._hotel_get_schema(cursor, "tblHotel", "_hotel_guest_schema")
-            id_col = next((c for c in schema if self._hotel_norm(c) == "id"), None)
-            dep_col = next((c for c in schema if self._hotel_norm(c) == "tarikhkhoroj"), None)
-            stay_col = next((c for c in schema if self._hotel_norm(c) in ("modateghamat", "modateghamat", "stayduration")), None)
+            # نام ستون‌ها در نسخه‌های مختلف دیتابیس متفاوت است؛ از همان
+            # نام‌های جایگزینی استفاده می‌کنیم که در بخش‌های دیگر پروژه پشتیبانی شده‌اند.
+            schema_keys = {col: None for col in schema}
+            id_col = self._hotel_pick(schema_keys, "ID", "id", "شناسه")
+            dep_col = self._hotel_pick(
+                schema_keys, "TarikhKhoroj", "departure", "تاریخ خروج"
+            )
+            stay_col = self._hotel_pick(
+                schema_keys, "ModatEghamat", "modateghamat", "stayduration", "مدت اقامت"
+            )
             if not id_col or not dep_col:
-                raise RuntimeError("فیلد ID یا TarikhKhoroj در tblHotel پیدا نشد.")
+                available = "، ".join(str(col) for col in schema)
+                missing = []
+                if not id_col:
+                    missing.append("شناسه (ID)")
+                if not dep_col:
+                    missing.append("تاریخ خروج مورد انتظار (TarikhKhoroj/departure)")
+                raise RuntimeError(
+                    f"فیلد {' و '.join(missing)} در tblHotel پیدا نشد. "
+                    f"فیلدهای موجود: {available}"
+                )
             db_departure = self._hotel_db_date_value(cursor, "tblHotel", dep_col, new_departure)
             if stay_col:
                 try:

@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 
 from ui_login import Ui_login
 from db_config import get_connection
+from user_activity_log import log_user_event
 from main import MainWindow
 
 
@@ -163,6 +164,16 @@ class LoginDialog(QDialog):
             user = cursor.fetchone()
 
             if user is None or not _verify_password(password, str(user[3] or "")):
+                # رمز عبور هرگز در گزارش ذخیره نمی‌شود.
+                log_user_event(
+                    username, "Login", "ورود",
+                    "تلاش ناموفق برای ورود؛ نام کاربری یا رمز عبور نامعتبر",
+                    result="Failed", connection=connection,
+                )
+                try:
+                    connection.commit()
+                except Exception:
+                    pass
                 QMessageBox.warning(
                     self,
                     "ورود ناموفق",
@@ -194,6 +205,17 @@ class LoginDialog(QDialog):
                 "vahed": user[6],
                 "Userlevel": user[7],
             }
+
+            # ثبت ورود موفق؛ شکست احتمالی لاگ‌گیری مانع ورود کاربر نمی‌شود.
+            log_user_event(
+                str(self.current_user.get("username") or username),
+                "Login", "ورود", "ورود موفق به سامانه",
+                result="Success", connection=connection,
+            )
+            try:
+                connection.commit()
+            except Exception:
+                pass
 
             self.settings.setValue("last_username", username)
             self.accept()

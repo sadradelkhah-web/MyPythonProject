@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 
 from db_config import get_connection
+from user_activity_log import log_user_event
 
 
 # =========================================================
@@ -737,6 +738,12 @@ class UserManagement:
             ))
 
             conn.commit()
+            log_user_event(
+                str(self.current_user.get("username") or ""),
+                "Create", "مدیریت کاربران",
+                f"ایجاد حساب کاربری {user_login} برای {full_name}",
+                result="Success",
+            )
 
             QMessageBox.information(
                 self.window,
@@ -889,6 +896,12 @@ class UserManagement:
             ))
 
             conn.commit()
+            log_user_event(
+                str(self.current_user.get("username") or ""),
+                "Update", "مدیریت کاربران",
+                f"ویرایش حساب کاربری {user_login}؛ نام نمایشی {full_name}",
+                record_id=self.selected_userid, result="Success",
+            )
 
             QMessageBox.information(
                 self.window,
@@ -1027,6 +1040,12 @@ class UserManagement:
             ))
 
             conn.commit()
+            log_user_event(
+                str(self.current_user.get("username") or ""),
+                "Delete", "مدیریت کاربران",
+                f"حذف حساب کاربری {selected_user[0]}",
+                record_id=self.selected_userid, result="Success",
+            )
 
             QMessageBox.information(
                 self.window,
@@ -1202,6 +1221,12 @@ class UserManagement:
                 return
 
             conn.commit()
+            log_user_event(
+                str(self.current_user.get("username") or ""),
+                "PasswordChange", "مدیریت کاربران",
+                f"تغییر رمز حساب کاربری {self.ui.cmbChangeUser.currentText().strip()}",
+                record_id=userid, result="Success",
+            )
 
             QMessageBox.information(
                 self.window,

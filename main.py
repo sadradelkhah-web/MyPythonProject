@@ -1,6 +1,6 @@
 import re
 import jdatetime
-from datetime import datetime, date as py_date
+from datetime import datetime, date as py_date, timedelta
 
 from PySide6.QtCore import QDate, QDateTime, QTimer, Qt, QStringListModel, Signal
 from PySide6.QtGui import QAction, QFont, QIcon, QPainter, QPen, QPixmap, QColor, QTextDocument
@@ -923,7 +923,17 @@ class MainWindow(QMainWindow):
         ):
             self.cmbActivityLogAction.addItem(label, action_code)
 
-        self.btnActivityLogRefresh = QPushButton("به‌روزرسانی")
+        # بازه تاریخ شمسی؛ برای گزارش یک روز، تاریخ شروع و پایان را یکسان وارد کنید.
+        self.txtActivityLogFrom = JalaliDateLineEdit(self.user_activity_log_page)
+        self.txtActivityLogFrom.setObjectName("txtActivityLogFrom")
+        self.txtActivityLogFrom.setPlaceholderText("از تاریخ شمسی")
+        self.txtActivityLogFrom.setMinimumWidth(130)
+        self.txtActivityLogTo = JalaliDateLineEdit(self.user_activity_log_page)
+        self.txtActivityLogTo.setObjectName("txtActivityLogTo")
+        self.txtActivityLogTo.setPlaceholderText("تا تاریخ شمسی")
+        self.txtActivityLogTo.setMinimumWidth(130)
+
+        self.btnActivityLogRefresh = QPushButton("اعمال فیلتر / به‌روزرسانی")
         self.btnActivityLogRefresh.setMinimumHeight(34)
         self.btnActivityLogRefresh.clicked.connect(self.load_user_activity_log)
         self.txtActivityLogUser.textChanged.connect(self._filter_user_activity_log)
@@ -934,9 +944,16 @@ class MainWindow(QMainWindow):
         filters.addWidget(self.txtActivityLogUser, 2)
         filters.addWidget(QLabel("نوع عملیات:"))
         filters.addWidget(self.cmbActivityLogAction, 1)
-        filters.addWidget(self.btnActivityLogRefresh)
+
+        date_filters = QHBoxLayout()
+        date_filters.addWidget(QLabel("از تاریخ:"))
+        date_filters.addWidget(self.txtActivityLogFrom, 1)
+        date_filters.addWidget(QLabel("تا تاریخ:"))
+        date_filters.addWidget(self.txtActivityLogTo, 1)
+        date_filters.addWidget(self.btnActivityLogRefresh)
         root.addLayout(actions)
         root.addLayout(filters)
+        root.addLayout(date_filters)
 
         self.tblUserActivityLog = QTableWidget(self.user_activity_log_page)
         self.tblUserActivityLog.setColumnCount(9)
@@ -957,20 +974,71 @@ class MainWindow(QMainWindow):
         root.addWidget(self.lblActivityLogCount)
         self._activity_log_rows = []
 
+    def _parse_activity_log_date(self, widget, field_label):
+        """تبدیل تاریخ شمسی ورودی به datetime میلادی برای فیلتر SQL."""
+        raw = normalize_digits(widget.text()).strip()
+        if not raw:
+            return None
+        digits = "".join(ch for ch in raw if ch.isdigit())
+        if len(digits) != 8:
+            raise ValueError(
+                f"تاریخ «{field_label}» معتبر نیست؛ قالب تاریخ باید مانند 1405/07/01 باشد."
+            )
+        try:
+            jalali_value = jdatetime.date(
+                int(digits[:4]), int(digits[4:6]), int(digits[6:8])
+            )
+            gregorian_value = jalali_value.togregorian()
+            return datetime(
+                gregorian_value.year, gregorian_value.month, gregorian_value.day
+            )
+        except Exception:
+            raise ValueError(f"تاریخ «{field_label}» معتبر نیست.")
+
     def load_user_activity_log(self, *_args):
-        """آخرین ۱۰۰۰ رویداد را می‌خواند و فیلترهای صفحه را اعمال می‌کند."""
+        """حداکثر ۱۰۰۰ رویداد منطبق با فیلترهای تاریخ را از دیتابیس می‌خواند."""
         if not self.is_master:
             return
+
+        try:
+            date_from = self._parse_activity_log_date(self.txtActivityLogFrom, "از تاریخ")
+            date_to = self._parse_activity_log_date(self.txtActivityLogTo, "تا تاریخ")
+        except ValueError as exc:
+            QMessageBox.warning(self, "فیلتر تاریخ", str(exc))
+            return
+
+        if date_from and date_to and date_from > date_to:
+            QMessageBox.warning(
+                self, "فیلتر تاریخ",
+                "تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد."
+            )
+            return
+
+        # فیلتر تاریخ در خود SQL اعمال می‌شود تا بتوان گزارش‌های قدیمی‌تر از
+        # ۱۰۰۰ رویداد اخیر را نیز جست‌وجو کرد.
+        date_conditions = []
+        date_params = []
+        if date_from is not None:
+            date_conditions.append("[EventDateTime] >= ?")
+            date_params.append(date_from)
+        if date_to is not None:
+            date_conditions.append("[EventDateTime] < ?")
+            date_params.append(date_to + timedelta(days=1))
+
+        query = """
+            SELECT TOP 1000 [ID], [Username], [ActionType], [ModuleName],
+                   [Description], [RecordID], [EventDateTime], [ComputerName], [Result]
+            FROM [LoginEvent]
+        """
+        if date_conditions:
+            query += " WHERE " + " AND ".join(date_conditions)
+        query += " ORDER BY [EventDateTime] DESC, [ID] DESC"
+
         conn = cursor = None
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            cursor.execute("""
-                SELECT TOP 1000 [ID], [Username], [ActionType], [ModuleName],
-                       [Description], [RecordID], [EventDateTime], [ComputerName], [Result]
-                FROM [LoginEvent]
-                ORDER BY [EventDateTime] DESC, [ID] DESC
-            """)
+            cursor.execute(query, date_params)
             self._activity_log_rows = [tuple(row) for row in cursor.fetchall()]
         except Exception as exc:
             QMessageBox.warning(
@@ -1032,7 +1100,8 @@ class MainWindow(QMainWindow):
                     row_index, col, QTableWidgetItem("" if value is None else str(value))
                 )
         self.lblActivityLogCount.setText(
-            f"تعداد رویدادهای نمایش‌داده‌شده: {len(rows)} از حداکثر ۱۰۰۰ رویداد اخیر"
+            f"تعداد رویدادهای نمایش‌داده‌شده: {len(rows)} "
+            f"(حداکثر ۱۰۰۰ رکورد منطبق با فیلترها)"
         )
 
     def open_user_management(self):

@@ -86,7 +86,7 @@ def _ensure_settings_table(connection, cursor):
                 [accent_color] TEXT(16),
                 [table_row_height] INTEGER,
                 [alternating_rows] BIT,
-                PRIMARY KEY ([userid])
+                CONSTRAINT [PK_tblUserAppearanceSettings] PRIMARY KEY ([userid])
             )
         """)
         connection.commit()

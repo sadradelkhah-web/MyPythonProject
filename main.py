@@ -42,6 +42,12 @@ from user_activity_log import log_user_event
 from user_management import UserManagement
 from tab_permissions import get_user_permissions, apply_tab_permissions
 from user_permissions import open_user_permissions_dialog
+from appearance_settings import (
+    UserAppearanceDialog,
+    load_user_appearance_settings,
+    save_user_appearance_settings,
+    appearance_stylesheet,
+)
 
 
 
@@ -428,6 +434,8 @@ class MainWindow(QMainWindow):
         self.user = user
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self._appearance_base_stylesheet = self.styleSheet()
+        self.appearance_settings = load_user_appearance_settings(self.user.get("userid"))
         self._configure_responsive_window()
         self.open_forms = {}
         self.is_master = str(self.user.get("usersecurity") or "").strip().casefold() == "superadmin"
@@ -462,6 +470,7 @@ class MainWindow(QMainWindow):
         self.clock_timer.start(1000)
         # اجرای مجدد پس از ساخته‌شدن همه تب‌ها؛ تب‌ها در زمان اجرای setup ساخته می‌شوند.
         self._configure_responsive_window()
+        self.apply_appearance_settings()
         self.showMaximized()
         log_user_event(self.username, "SessionStart", "ورود و خروج", "شروع نشست کاربری", result="Success")
 
@@ -661,6 +670,16 @@ class MainWindow(QMainWindow):
         permission_index = nav_layout.indexOf(self.ui.btnTabPermissions)
         nav_layout.insertWidget(permission_index + 1 if permission_index >= 0 else nav_layout.count(), self.btnUserActivityLog)
         self.btnUserActivityLog.clicked.connect(self.open_user_activity_log)
+
+        self.btnAppearanceSettings = QPushButton("تنظیمات ظاهری من", self.ui.navigationPanel)
+        self.btnAppearanceSettings.setObjectName("btnAppearanceSettings")
+        self.btnAppearanceSettings.setMinimumHeight(42)
+        password_index = nav_layout.indexOf(self.ui.btnPassword)
+        nav_layout.insertWidget(
+            password_index + 1 if password_index >= 0 else nav_layout.count(),
+            self.btnAppearanceSettings,
+        )
+        self.btnAppearanceSettings.clicked.connect(self.open_appearance_settings)
 
         self.ui.btnRepairs.clicked.connect(lambda: self.open_page(self.ui.tabKar))
         self.ui.btnAssets.clicked.connect(lambda: self.open_page(self.ui.tabAmval))
@@ -866,6 +885,84 @@ class MainWindow(QMainWindow):
         if not self._page_allowed(page):
             self.show_home()
 
+
+    def open_appearance_settings(self):
+        """نمایش پنجره تنظیمات شخصی؛ تنظیمات برای userid همین حساب ذخیره می‌شود."""
+        dialog = UserAppearanceDialog(self, self.appearance_settings)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        selected = dialog.selected_settings()
+        try:
+            save_user_appearance_settings(self.user.get("userid"), selected)
+        except Exception as exc:
+            QMessageBox.critical(
+                self, "ذخیره تنظیمات ناموفق",
+                f"تنظیمات ظاهری ذخیره نشدند:\\n{exc}"
+            )
+            return
+
+        self.appearance_settings = selected
+        self.apply_appearance_settings()
+        QMessageBox.information(
+            self, "تنظیمات ظاهری",
+            "تنظیمات برای حساب کاربری شما ذخیره و اعمال شد."
+        )
+
+    def apply_appearance_settings(self):
+        """اعمال پوسته، قلم و تراکم جدول‌ها بدون حذف استایل‌های پایه برنامه."""
+        settings = dict(getattr(self, "appearance_settings", {}) or {})
+        if not settings:
+            settings = load_user_appearance_settings(self.user.get("userid"))
+            self.appearance_settings = settings
+
+        family = str(settings.get("font_family") or "B Nazanin")
+        try:
+            font_size = max(9, min(16, int(settings.get("font_size", 11))))
+        except (TypeError, ValueError):
+            font_size = 11
+        try:
+            row_height = int(settings.get("table_row_height", 34))
+        except (TypeError, ValueError):
+            row_height = 34
+        row_height = row_height if row_height in (28, 34, 42) else 34
+        stylesheet = appearance_stylesheet(settings)
+
+        # نگهداری فونت و استایل اصلی تا تغییر تنظیمات، استایل پایه را از بین نبرد.
+        widgets = [self] + self.findChildren(QWidget)
+        for widget in widgets:
+            if not hasattr(widget, "_appearance_original_font"):
+                widget._appearance_original_font = QFont(widget.font())
+            if not hasattr(widget, "_appearance_original_stylesheet"):
+                widget._appearance_original_stylesheet = widget.styleSheet()
+
+        self.setStyleSheet(self._appearance_base_stylesheet + "\\n" + stylesheet)
+
+        for widget in widgets:
+            base_font = widget._appearance_original_font
+            new_font = QFont(base_font)
+            new_font.setFamily(family)
+            base_size = base_font.pointSizeF()
+            if base_size <= 0:
+                base_size = 11.0
+            scaled_size = base_size * (font_size / 11.0)
+            new_font.setPointSizeF(max(8.0, min(22.0, scaled_size)))
+            widget.setFont(new_font)
+
+        # استایل جداگانه برخی جدول‌ها در main.py تعریف شده؛ پوسته را به همان جدول
+        # نیز اضافه می‌کنیم تا در حالت تیره رنگ سفیدِ ثابت باقی نماند.
+        for table in self.findChildren(QTableWidget):
+            base_style = table._appearance_original_stylesheet
+            table.setStyleSheet(base_style + "\\n" + stylesheet)
+            table.setAlternatingRowColors(bool(settings.get("alternating_rows", True)))
+            table.verticalHeader().setDefaultSectionSize(row_height)
+            table.horizontalHeader().setMinimumHeight(max(32, font_size * 3))
+
+        # پنجره‌های تولیدشده در زمان اجرا (مانند گزارش فعالیت) تنظیمات را هم می‌گیرند.
+        if hasattr(self, "tblUserActivityLog"):
+            self.tblUserActivityLog.setAlternatingRowColors(
+                bool(settings.get("alternating_rows", True))
+            )
 
     def open_user_activity_log(self):
         """گزارش فعالیت‌ها فقط برای SuperAdmin قابل مشاهده است."""

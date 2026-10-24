@@ -5914,9 +5914,8 @@ class MainWindow(QMainWindow):
             )
 
         self.ui.btnRefreshReport.setToolTip("اعمال فیلترها و نمایش گزارش کارهای تعمیراتی")
-        self.ui.btnRefreshReport.clicked.connect(
-            lambda checked=False: self.load_report_data()
-        )
+        self.ui.btnRefreshReport.clicked.connect(self.refresh_report_data)
+        self.ui.btnExportReport.clicked.connect(self.export_report_excel)
         self.ui.btnClearReportFilters.clicked.connect(self.clear_report_filters)
         self.ui.txtReportSearch.textChanged.connect(self.load_report_data)
         self.ui.cmbReportUnit.currentIndexChanged.connect(self.load_report_data)
@@ -6065,7 +6064,35 @@ class MainWindow(QMainWindow):
                     pass
         return latest
 
+    def refresh_report_data(self, *_args):
+        """اجرای دستی گزارش؛ نتیجه و خطا را به‌شکل قابل مشاهده نشان می‌دهد."""
+        try:
+            self.ui.lblReportResultCount.setText("در حال به‌روزرسانی گزارش...")
+            self.ui.btnRefreshReport.setEnabled(False)
+            QApplication.processEvents()
+            self.load_report_data()
+            if not getattr(self, "_report_last_load_success", False):
+                self.ui.lblReportResultCount.setText(
+                    "گزارش دریافت نشد؛ پیام خطا یا فیلترهای تاریخ را بررسی کنید."
+                )
+                return
+            count = len(getattr(self, "_report_export_rows", []))
+            stamp = datetime.now().strftime("%H:%M:%S")
+            self.ui.lblReportResultCount.setText(
+                f"گزارش به‌روزرسانی شد | تعداد نتایج: {count} | ساعت {stamp}"
+            )
+        except Exception as exc:
+            self.ui.lblReportResultCount.setText("دریافت گزارش ناموفق بود.")
+            QMessageBox.critical(
+                self, "خطای نمایش گزارش",
+                f"اجرای گزارش با خطای پیش‌بینی‌نشده مواجه شد:\n{exc}"
+            )
+        finally:
+            self.ui.btnRefreshReport.setEnabled(True)
+
     def load_report_data(self, *_args):
+        self._report_last_load_success = False
+        self._report_export_rows = []
         if not hasattr(self.ui, "tblReportList"):
             return
 
@@ -6078,7 +6105,7 @@ class MainWindow(QMainWindow):
             sql = """
                 SELECT [wonumber], [vahed], [tarikhdarkhast], [mozooe],
                        [mahalkarf], [mahalkara], [darkhastkonande], [sharh],
-                       [vaziyat], [tarikh], [sharhepey], [payan]
+                       [vaziyat], [tarikh], [sharhepey], [payan], [editor]
                 FROM [tblkar]
             """
             conditions = []
@@ -6117,6 +6144,7 @@ class MainWindow(QMainWindow):
             cursor.execute(sql, tuple(params))
             rows = cursor.fetchall()
         except Exception as exc:
+            self.ui.lblReportResultCount.setText("دریافت گزارش ناموفق بود.")
             QMessageBox.warning(
                 self, "گزارش کارها",
                 f"دریافت گزارش با خطا مواجه شد:\n{exc}"
@@ -6139,12 +6167,14 @@ class MainWindow(QMainWindow):
         from_date = self._read_report_filter_date(self.ui.txtReportFrom)
         to_date = self._read_report_filter_date(self.ui.txtReportTo)
         if from_date == "INVALID" or to_date == "INVALID":
+            self.ui.lblReportResultCount.setText("تاریخ فیلتر نامعتبر است.")
             QMessageBox.warning(
                 self, "تاریخ نامعتبر",
                 "تاریخ شروع یا پایان معتبر نیست. تاریخ شمسی را به شکل 1405/07/18 وارد کنید؛ برای نمایش همه تاریخ‌ها، فیلد را خالی بگذارید."
             )
             return
         if from_date and to_date and from_date > to_date:
+            self.ui.lblReportResultCount.setText("بازه تاریخ نامعتبر است.")
             QMessageBox.warning(
                 self, "بازه تاریخ نامعتبر",
                 "تاریخ «از تاریخ» نباید بعد از «تا تاریخ» باشد."
@@ -6153,6 +6183,7 @@ class MainWindow(QMainWindow):
         wanted_status = self.ui.cmbReportStatus.currentText()
 
         display_rows = []
+        export_rows = []
         for row in rows:
             wonumber = str(row[0] or "").strip()
             unit = str(row[1] or "").strip()
@@ -6166,6 +6197,7 @@ class MainWindow(QMainWindow):
             raw_status = str(row[8] or "").strip()
             # در رکوردهای قدیمی ممکن است وضعیت خالی باشد، اما فیلد payan درست باشد.
             payan_value = row[11] if len(row) > 11 else False
+            editor = str(row[12] or "").strip() if len(row) > 12 else ""
             is_completed = payan_value is True or str(payan_value).strip().casefold() in ("true", "1", "-1", "yes")
             status = normalize_status(raw_status) or ("پایان" if is_completed else "ثبت نشده")
             if is_completed:
@@ -6198,6 +6230,21 @@ class MainWindow(QMainWindow):
                 wonumber, unit, date_raw, topic, area, requester,
                 request_description, status, followup_date, followup_description,
             ))
+            export_rows.append({
+                "شماره درخواست": wonumber,
+                "واحد": unit,
+                "تاریخ درخواست": self._format_jalali_date(date_raw),
+                "موضوع درخواست": topic,
+                "محل کار": area,
+                "محل انجام کار": sub_area,
+                "درخواست‌کننده": requester,
+                "شرح درخواست": request_description,
+                "وضعیت": status,
+                "تاریخ پیگیری/پایان": self._format_jalali_date(followup_date),
+                "شرح پیگیری": followup_description,
+                "پایان کار": "بله" if is_completed else "خیر",
+                "آخرین ویرایش‌کننده": editor,
+            })
 
         table = self.ui.tblReportList
         table.setRowCount(len(display_rows))
@@ -6220,6 +6267,240 @@ class MainWindow(QMainWindow):
         widths = [55, 105, 160, 115, 150, 150, 140, 320, 125, 125, 300]
         for col, width in enumerate(widths):
             table.setColumnWidth(col, width)
+
+        self._report_export_rows = export_rows
+        self._report_last_load_success = True
+        report_stamp = datetime.now().strftime("%H:%M:%S")
+        self.ui.lblReportResultCount.setText(
+            f"تعداد نتایج: {len(display_rows)} | آخرین به‌روزرسانی: {report_stamp}"
+        )
+
+    def export_report_excel(self, *_args):
+        """صدور همان نتایج فیلترشده، شامل ستون‌های دیتابیس و خلاصه‌های مدیریتی."""
+        if not getattr(self, "_report_last_load_success", False):
+            self.load_report_data()
+        if not getattr(self, "_report_last_load_success", False):
+            QMessageBox.warning(
+                self, "خروجی Excel",
+                "گزارش با موفقیت دریافت نشده است. ابتدا فیلترها را بررسی و «نمایش گزارش» را اجرا کنید."
+            )
+            return
+
+        rows = list(getattr(self, "_report_export_rows", []))
+        if not rows:
+            QMessageBox.information(
+                self, "خروجی Excel",
+                "برای فیلترهای فعلی رکوردی وجود ندارد؛ خروجی اکسل ساخته نشد."
+            )
+            return
+
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+            from openpyxl.utils import get_column_letter
+        except ImportError:
+            QMessageBox.warning(
+                self, "خروجی Excel",
+                "کتابخانه openpyxl نصب نیست. در ترمینال محیط برنامه اجرا کنید:\n"
+                "python -m pip install openpyxl"
+            )
+            return
+
+        report_date = jdatetime.date.today().strftime("%Y/%m/%d")
+        filters = [
+            f"واحد: {self.ui.cmbReportUnit.currentText().strip() or 'همه واحدها'}",
+            f"موضوع: {self.ui.cmbReportTopic.currentText().strip() or 'همه موضوعات'}",
+            f"وضعیت: {self.ui.cmbReportStatus.currentText().strip() or 'همه وضعیت‌ها'}",
+            f"از تاریخ: {self.ui.txtReportFrom.text().strip() or 'بدون محدودیت'}",
+            f"تا تاریخ: {self.ui.txtReportTo.text().strip() or 'بدون محدودیت'}",
+        ]
+        text_filter = self.ui.txtReportSearch.text().strip()
+        if text_filter:
+            filters.append(f"جستجو: {text_filter}")
+        filter_summary = " | ".join(filters)
+
+        path, _ = QFileDialog.getSaveFileName(
+            self, "ذخیره گزارش و پیگیری کارها",
+            f"گزارش_پیگیری_کارها_{report_date.replace('/', '-')}.xlsx",
+            "فایل Excel (*.xlsx)"
+        )
+        if not path:
+            return
+        if not path.lower().endswith(".xlsx"):
+            path += ".xlsx"
+
+        headers = list(rows[0].keys())
+        workbook = None
+        try:
+            workbook = Workbook()
+            ws = workbook.active
+            ws.title = "گزارش کارها"
+            ws.sheet_view.rightToLeft = True
+            ws.freeze_panes = "A8"
+            ws.page_setup.orientation = "landscape"
+            ws.page_setup.fitToWidth = 1
+            ws.page_setup.fitToHeight = 0
+
+            blue_fill = PatternFill("solid", fgColor="1F4E78")
+            light_fill = PatternFill("solid", fgColor="D9EAF7")
+            alternate_fill = PatternFill("solid", fgColor="F4F7FA")
+            white_bold = Font(name="B Nazanin", size=11, bold=True, color="FFFFFF")
+            normal_font = Font(name="B Nazanin", size=10, color="202020")
+            title_font = Font(name="B Nazanin", size=16, bold=True, color="FFFFFF")
+            bold_font = Font(name="B Nazanin", size=10, bold=True, color="202020")
+            thin_side = Side(style="thin", color="C7D0DB")
+            cell_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+            centered = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+            ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
+            ws.cell(1, 1, "گزارش کارها و پیگیری تعمیرات")
+            for col in range(1, len(headers) + 1):
+                cell = ws.cell(1, col)
+                cell.fill = blue_fill
+                cell.border = cell_border
+            ws.cell(1, 1).font = title_font
+            ws.cell(1, 1).alignment = centered
+            ws.row_dimensions[1].height = 30
+
+            ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=len(headers))
+            ws.cell(2, 1, f"تاریخ تهیه گزارش: {report_date}")
+            ws.cell(2, 1).font = bold_font
+            ws.cell(2, 1).alignment = Alignment(horizontal="right", vertical="center")
+            ws.merge_cells(start_row=3, start_column=1, end_row=3, end_column=len(headers))
+            ws.cell(3, 1, f"فیلترهای اعمال‌شده: {filter_summary}")
+            ws.cell(3, 1).font = normal_font
+            ws.cell(3, 1).alignment = Alignment(horizontal="right", vertical="center", wrap_text=True)
+            ws.row_dimensions[3].height = 32
+
+            ws.cell(4, 1, "تعداد کل درخواست‌ها")
+            ws.cell(4, 2, len(rows))
+            for col in (1, 2):
+                cell = ws.cell(4, col)
+                cell.fill = light_fill
+                cell.font = bold_font
+                cell.alignment = centered
+                cell.border = cell_border
+
+            header_row = 7
+            for col, header in enumerate(headers, start=1):
+                cell = ws.cell(header_row, col, header)
+                cell.fill = blue_fill
+                cell.font = white_bold
+                cell.alignment = centered
+                cell.border = cell_border
+            ws.row_dimensions[header_row].height = 32
+
+            for row_index, record in enumerate(rows, start=header_row + 1):
+                for col, header in enumerate(headers, start=1):
+                    cell = ws.cell(row_index, col, record.get(header, ""))
+                    cell.font = normal_font
+                    cell.alignment = centered
+                    cell.border = cell_border
+                    if row_index % 2 == 0:
+                        cell.fill = alternate_fill
+                ws.row_dimensions[row_index].height = 28
+
+            ws.auto_filter.ref = f"A{header_row}:{get_column_letter(len(headers))}{header_row + len(rows)}"
+            for col, header in enumerate(headers, start=1):
+                suggested = max(len(str(header)) + 2, 14)
+                for row_index in range(header_row + 1, min(header_row + len(rows), header_row + 40) + 1):
+                    suggested = max(suggested, min(len(str(ws.cell(row_index, col).value or "")) + 2, 42))
+                ws.column_dimensions[get_column_letter(col)].width = min(suggested, 42)
+            ws.print_title_rows = f"{header_row}:{header_row}"
+
+            unit_summary = workbook.create_sheet("خلاصه بر اساس واحد")
+            unit_summary.sheet_view.rightToLeft = True
+            unit_summary.freeze_panes = "A6"
+            unit_summary.merge_cells("A1:B1")
+            unit_summary["A1"] = "خلاصه درخواست‌ها بر اساس واحد"
+            unit_summary["A1"].font = title_font
+            unit_summary["A1"].alignment = centered
+            for col in range(1, 3):
+                unit_summary.cell(1, col).fill = blue_fill
+                unit_summary.cell(1, col).border = cell_border
+            unit_summary.merge_cells("A2:B2")
+            unit_summary["A2"] = f"تاریخ تهیه گزارش: {report_date}"
+            unit_summary["A2"].font = bold_font
+            unit_summary["A2"].alignment = Alignment(horizontal="right", vertical="center")
+            for col, header in enumerate(("واحد", "تعداد درخواست‌ها"), start=1):
+                cell = unit_summary.cell(5, col, header)
+                cell.fill = blue_fill
+                cell.font = white_bold
+                cell.alignment = centered
+                cell.border = cell_border
+
+            unit_counts = {}
+            status_counts = {}
+            for record in rows:
+                unit_name = str(record.get("واحد") or "").strip() or "نامشخص"
+                status_name = str(record.get("وضعیت") or "ثبت نشده").strip() or "ثبت نشده"
+                unit_counts[unit_name] = unit_counts.get(unit_name, 0) + 1
+                status_counts[status_name] = status_counts.get(status_name, 0) + 1
+
+            summary_row = 6
+            for unit_name, count in sorted(unit_counts.items(), key=lambda item: item[0]):
+                for col, value in enumerate((unit_name, count), start=1):
+                    cell = unit_summary.cell(summary_row, col, value)
+                    cell.font = normal_font
+                    cell.alignment = centered
+                    cell.border = cell_border
+                    if summary_row % 2 == 0:
+                        cell.fill = alternate_fill
+                summary_row += 1
+            for col, width in enumerate((32, 22), start=1):
+                unit_summary.column_dimensions[get_column_letter(col)].width = width
+
+            status_summary = workbook.create_sheet("خلاصه وضعیت")
+            status_summary.sheet_view.rightToLeft = True
+            status_summary.freeze_panes = "A6"
+            status_summary.merge_cells("A1:B1")
+            status_summary["A1"] = "خلاصه درخواست‌ها بر اساس وضعیت"
+            status_summary["A1"].font = title_font
+            status_summary["A1"].alignment = centered
+            for col in range(1, 3):
+                status_summary.cell(1, col).fill = blue_fill
+                status_summary.cell(1, col).border = cell_border
+            status_summary.merge_cells("A2:B2")
+            status_summary["A2"] = f"تاریخ تهیه گزارش: {report_date}"
+            status_summary["A2"].font = bold_font
+            status_summary["A2"].alignment = Alignment(horizontal="right", vertical="center")
+            for col, header in enumerate(("وضعیت", "تعداد درخواست‌ها"), start=1):
+                cell = status_summary.cell(5, col, header)
+                cell.fill = blue_fill
+                cell.font = white_bold
+                cell.alignment = centered
+                cell.border = cell_border
+            summary_row = 6
+            for status_name, count in sorted(status_counts.items(), key=lambda item: item[0]):
+                for col, value in enumerate((status_name, count), start=1):
+                    cell = status_summary.cell(summary_row, col, value)
+                    cell.font = normal_font
+                    cell.alignment = centered
+                    cell.border = cell_border
+                    if summary_row % 2 == 0:
+                        cell.fill = alternate_fill
+                summary_row += 1
+            for col, width in enumerate((30, 22), start=1):
+                status_summary.column_dimensions[get_column_letter(col)].width = width
+
+            workbook.save(path)
+        except Exception as exc:
+            QMessageBox.critical(
+                self, "ساخت فایل Excel ناموفق",
+                f"فایل گزارش ذخیره نشد:\n{exc}"
+            )
+            return
+        finally:
+            if workbook is not None:
+                try:
+                    workbook.close()
+                except Exception:
+                    pass
+
+        QMessageBox.information(
+            self, "خروجی Excel",
+            f"گزارش با موفقیت ذخیره شد:\n{path}\n\nتعداد درخواست‌های خروجی: {len(rows)}"
+        )
 
     def on_report_selection_changed(self):
         row = self.ui.tblReportList.currentRow()

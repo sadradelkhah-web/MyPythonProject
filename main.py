@@ -43,9 +43,13 @@ from user_management import UserManagement
 from tab_permissions import get_user_permissions, apply_tab_permissions
 from user_permissions import open_user_permissions_dialog
 from appearance_settings import (
+    DEFAULT_APPEARANCE_SETTINGS,
     UserAppearanceDialog,
+    load_default_appearance_settings,
+    save_default_appearance_settings,
     load_user_appearance_settings,
     save_user_appearance_settings,
+    reset_user_appearance_settings,
     appearance_stylesheet,
 )
 
@@ -681,6 +685,17 @@ class MainWindow(QMainWindow):
         )
         self.btnAppearanceSettings.clicked.connect(self.open_appearance_settings)
 
+        self.btnAppearanceDefaults = QPushButton("تنظیمات پیش‌فرض برنامه", self.ui.navigationPanel)
+        self.btnAppearanceDefaults.setObjectName("btnAppearanceDefaults")
+        self.btnAppearanceDefaults.setMinimumHeight(42)
+        self.btnAppearanceDefaults.setVisible(self.is_master)
+        appearance_index = nav_layout.indexOf(self.btnAppearanceSettings)
+        nav_layout.insertWidget(
+            appearance_index + 1 if appearance_index >= 0 else nav_layout.count(),
+            self.btnAppearanceDefaults,
+        )
+        self.btnAppearanceDefaults.clicked.connect(self.open_default_appearance_settings)
+
         self.ui.btnRepairs.clicked.connect(lambda: self.open_page(self.ui.tabKar))
         self.ui.btnAssets.clicked.connect(lambda: self.open_page(self.ui.tabAmval))
         self.ui.btnHotel.clicked.connect(lambda: self.open_page(self.ui.tabHotel))
@@ -887,13 +902,28 @@ class MainWindow(QMainWindow):
 
 
     def open_appearance_settings(self):
-        """نمایش پنجره تنظیمات شخصی؛ تنظیمات برای userid همین حساب ذخیره می‌شود."""
-        dialog = UserAppearanceDialog(self, self.appearance_settings)
+        """نمایش تنظیمات شخصی؛ بازنشانی، حساب را به پیش‌فرض جاری متصل می‌کند."""
+        dialog = UserAppearanceDialog(
+            self,
+            self.appearance_settings,
+            reset_settings=load_default_appearance_settings(),
+            reset_means_inherit=True,
+        )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
 
-        selected = dialog.selected_settings()
         try:
+            if dialog.reset_to_inherit:
+                reset_user_appearance_settings(self.user.get("userid"))
+                self.appearance_settings = load_user_appearance_settings(self.user.get("userid"))
+                self.apply_appearance_settings()
+                QMessageBox.information(
+                    self, "تنظیمات ظاهری",
+                    "تنظیمات شخصی حذف شد و پیش‌فرض فعلی برنامه برای حساب شما اعمال شد."
+                )
+                return
+
+            selected = dialog.selected_settings()
             save_user_appearance_settings(self.user.get("userid"), selected)
         except Exception as exc:
             QMessageBox.critical(
@@ -907,6 +937,47 @@ class MainWindow(QMainWindow):
         QMessageBox.information(
             self, "تنظیمات ظاهری",
             "تنظیمات برای حساب کاربری شما ذخیره و اعمال شد."
+        )
+
+    def open_default_appearance_settings(self):
+        """مدیریت پیش‌فرض مشترک برنامه؛ فقط برای SuperAdmin."""
+        if not self.is_master:
+            QMessageBox.warning(
+                self, "عدم دسترسی",
+                "تغییر تنظیمات پیش‌فرض برنامه فقط برای SuperAdmin مجاز است."
+            )
+            return
+
+        dialog = UserAppearanceDialog(
+            self,
+            load_default_appearance_settings(),
+            title="تنظیمات پیش‌فرض برنامه",
+            intro_text=(
+                "این مقادیر برای حساب‌های جدید یا حساب‌هایی که تنظیمات شخصی‌شان را "
+                "به پیش‌فرض برمی‌گردانند استفاده می‌شود. تنظیمات شخصی ذخیره‌شده "
+                "کاربران دیگر تغییر نمی‌کند."
+            ),
+            reset_settings=DEFAULT_APPEARANCE_SETTINGS,
+            reset_means_inherit=False,
+            reset_button_text="بازگشت به پیش‌فرض اولیه",
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        try:
+            save_default_appearance_settings(dialog.selected_settings())
+            self.appearance_settings = load_user_appearance_settings(self.user.get("userid"))
+            self.apply_appearance_settings()
+        except Exception as exc:
+            QMessageBox.critical(
+                self, "ذخیره پیش‌فرض‌ها ناموفق",
+                f"تنظیمات پیش‌فرض ذخیره نشدند:\n{exc}"
+            )
+            return
+
+        QMessageBox.information(
+            self, "تنظیمات پیش‌فرض برنامه",
+            "پیش‌فرض‌های برنامه ذخیره شد. کاربران دارای تنظیمات شخصی قبلی تغییری نمی‌کنند."
         )
 
     def apply_appearance_settings(self):
@@ -936,24 +1007,42 @@ class MainWindow(QMainWindow):
             if not hasattr(widget, "_appearance_original_stylesheet"):
                 widget._appearance_original_stylesheet = widget.styleSheet()
 
+        # Set the application font too, so dialogs and widgets created later inherit it.
+        application = QApplication.instance()
+        if application is not None:
+            application_font = QFont(family)
+            application_font.setPointSize(font_size)
+            application.setFont(application_font)
+
         self.setStyleSheet(self._appearance_base_stylesheet + "\n" + stylesheet)
 
         for widget in widgets:
-            base_font = widget._appearance_original_font
-            new_font = QFont(base_font)
+            new_font = QFont(widget._appearance_original_font)
             new_font.setFamily(family)
-            base_size = base_font.pointSizeF()
-            if base_size <= 0:
-                base_size = 11.0
-            scaled_size = base_size * (font_size / 11.0)
-            new_font.setPointSizeF(max(8.0, min(22.0, scaled_size)))
+            new_font.setPointSize(font_size)
             widget.setFont(new_font)
+
+            # Append a widget-specific font rule after any existing inline style;
+            # this prevents old hard-coded fonts from blocking the user's choice.
+            widget_name = widget.objectName()
+            class_name = widget.metaObject().className()
+            selector = class_name + (f"#{widget_name}" if widget_name else "")
+            widget._appearance_font_override = (
+                f'{selector} {{ font-family: "{family}"; font-size: {font_size}pt; }}'
+            )
+            if widget is not self and widget._appearance_original_stylesheet:
+                widget.setStyleSheet(
+                    widget._appearance_original_stylesheet + "\n"
+                    + stylesheet + "\n" + widget._appearance_font_override
+                )
 
         # استایل جداگانه برخی جدول‌ها در main.py تعریف شده؛ پوسته را به همان جدول
         # نیز اضافه می‌کنیم تا در حالت تیره رنگ سفیدِ ثابت باقی نماند.
         for table in self.findChildren(QTableWidget):
             base_style = table._appearance_original_stylesheet
-            table.setStyleSheet(base_style + "\n" + stylesheet)
+            table.setStyleSheet(
+                base_style + "\n" + stylesheet + "\n" + table._appearance_font_override
+            )
             table.setAlternatingRowColors(bool(settings.get("alternating_rows", True)))
             table.verticalHeader().setDefaultSectionSize(row_height)
             table.horizontalHeader().setMinimumHeight(max(32, font_size * 3))

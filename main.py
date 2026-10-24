@@ -1033,7 +1033,7 @@ class MainWindow(QMainWindow):
             if widget is not self and widget._appearance_original_stylesheet:
                 widget.setStyleSheet(
                     widget._appearance_original_stylesheet + "\n"
-                    + stylesheet + "\n" + widget._appearance_font_override
+                    + widget._appearance_font_override
                 )
 
         # استایل جداگانه برخی جدول‌ها در main.py تعریف شده؛ پوسته را به همان جدول

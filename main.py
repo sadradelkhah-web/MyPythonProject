@@ -2055,6 +2055,13 @@ class MainWindow(QMainWindow):
         self.btnHotelHistoryApply = self.ui.btnHotelHistoryApply
         self.btnHotelHistoryClear = self.ui.btnHotelHistoryClear
         self.btnHotelHistoryReport = self.ui.btnHotelHistoryReport
+        self.btnHotelHistoryExportExcel = QPushButton("خروجی Excel", self.hotelHistoryPage)
+        self.btnHotelHistoryExportExcel.setObjectName("btnHotelHistoryExportExcel")
+        self.btnHotelHistoryExportExcel.setMinimumHeight(36)
+        self.btnHotelHistoryExportExcel.setToolTip(
+            "خروجی Excel از سوابق اقامت بر اساس فیلترهای فعلی"
+        )
+        self.btnHotelHistoryExportExcel.clicked.connect(self._hotel_export_history_excel)
         self.cmbHotelHistoryUnit.clear()
         self.cmbHotelHistoryUnit.addItems(["همه واحدها"])
         for _widget in (
@@ -2075,6 +2082,7 @@ class MainWindow(QMainWindow):
         history_person_filter.addWidget(self.btnHotelHistoryApply)
         history_person_filter.addWidget(self.btnHotelHistoryClear)
         history_person_filter.addWidget(self.btnHotelHistoryReport)
+        history_person_filter.addWidget(self.btnHotelHistoryExportExcel)
         layout.addLayout(history_person_filter)
 
         history_date_filter = QHBoxLayout()
@@ -3160,6 +3168,239 @@ class MainWindow(QMainWindow):
         preview.setWindowTitle("پیش‌نمایش چاپ گزارش سوابق اقامت")
         preview.paintRequested.connect(lambda target_printer: document.print_(target_printer))
         preview.exec()
+
+    def _hotel_export_history_excel(self, *_args):
+        """خروجی اکسل از سوابق اقامت فیلترشده در جدول."""
+        if not self._hotel_apply_history_filters():
+            return
+
+        table = self.ui.tblHotelHistory
+        if table.rowCount() == 0:
+            QMessageBox.information(
+                self, "خروجی Excel",
+                "با فیلترهای انتخاب‌شده رکوردی برای خروجی وجود ندارد."
+            )
+            return
+
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+            from openpyxl.utils import get_column_letter
+        except ImportError:
+            QMessageBox.warning(
+                self, "خروجی Excel",
+                "کتابخانه openpyxl نصب نیست. در ترمینال محیط برنامه اجرا کنید:\\n"
+                "python -m pip install openpyxl"
+            )
+            return
+
+        headers = [
+            table.horizontalHeaderItem(col).text()
+            if table.horizontalHeaderItem(col) else f"ستون {col + 1}"
+            for col in range(table.columnCount())
+        ]
+        records = [
+            [
+                table.item(row_index, col).text()
+                if table.item(row_index, col) else ""
+                for col in range(table.columnCount())
+            ]
+            for row_index in range(table.rowCount())
+        ]
+
+        report_date = self._hotel_today_jalali()
+        criteria = []
+        for label, value in (
+            ("جستجوی عمومی", self.ui.txtHotelSearch.text().strip()),
+            ("شخص", self.txtHotelHistoryPerson.text().strip()),
+        ):
+            if value:
+                criteria.append(f"{label}: {value}")
+        unit_value = self.cmbHotelHistoryUnit.currentText().strip()
+        if unit_value and unit_value != "همه واحدها":
+            criteria.append(f"واحد/سازمان: {unit_value}")
+        from_value = self.txtHotelHistoryFrom.text().strip()
+        to_value = self.txtHotelHistoryTo.text().strip()
+        if from_value:
+            criteria.append(f"از تاریخ: {from_value}")
+        if to_value:
+            criteria.append(f"تا تاریخ: {to_value}")
+        criteria_text = " | ".join(criteria) if criteria else "بدون فیلتر اختصاصی"
+
+        path, _ = QFileDialog.getSaveFileName(
+            self, "ذخیره خروجی Excel سوابق اقامت",
+            f"سوابق_اقامت_{report_date.replace('/', '-')}.xlsx",
+            "فایل Excel (*.xlsx)"
+        )
+        if not path:
+            return
+        if not path.lower().endswith(".xlsx"):
+            path += ".xlsx"
+
+        workbook = None
+        try:
+            workbook = Workbook()
+            ws = workbook.active
+            ws.title = "سوابق اقامت"
+            ws.sheet_view.rightToLeft = True
+            ws.freeze_panes = "A7"
+            ws.page_setup.orientation = "landscape"
+            ws.page_setup.fitToWidth = 1
+            ws.page_setup.fitToHeight = 0
+
+            title_fill = PatternFill("solid", fgColor="1F4E78")
+            header_fill = PatternFill("solid", fgColor="2F75A5")
+            info_fill = PatternFill("solid", fgColor="D9EAF7")
+            alt_fill = PatternFill("solid", fgColor="F4F7FA")
+            title_font = Font(name="B Nazanin", size=16, bold=True, color="FFFFFF")
+            header_font = Font(name="B Nazanin", size=11, bold=True, color="FFFFFF")
+            normal_font = Font(name="B Nazanin", size=10, color="202020")
+            bold_font = Font(name="B Nazanin", size=10, bold=True, color="202020")
+            thin = Side(style="thin", color="C7D0DB")
+            border = Border(left=thin, right=thin, top=thin, bottom=thin)
+            centered = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            column_count = len(headers)
+
+            ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=column_count)
+            ws.cell(1, 1, "گزارش سوابق اقامت اتاق‌داری")
+            ws.cell(1, 1).font = title_font
+            ws.cell(1, 1).alignment = centered
+            for col in range(1, column_count + 1):
+                ws.cell(1, col).fill = title_fill
+                ws.cell(1, col).border = border
+            ws.row_dimensions[1].height = 32
+
+            ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=column_count)
+            ws.cell(2, 1, f"تاریخ تهیه گزارش: {report_date}")
+            ws.cell(2, 1).font = bold_font
+            ws.cell(2, 1).alignment = Alignment(horizontal="right", vertical="center")
+            ws.merge_cells(start_row=3, start_column=1, end_row=3, end_column=column_count)
+            ws.cell(3, 1, f"فیلترهای اعمال‌شده: {criteria_text}")
+            ws.cell(3, 1).font = normal_font
+            ws.cell(3, 1).alignment = Alignment(horizontal="right", vertical="center", wrap_text=True)
+            ws.row_dimensions[3].height = 34
+            ws.cell(4, 1, "تعداد کل سوابق")
+            ws.cell(4, 2, len(records))
+            for col in (1, 2):
+                ws.cell(4, col).fill = info_fill
+                ws.cell(4, col).font = bold_font
+                ws.cell(4, col).alignment = centered
+                ws.cell(4, col).border = border
+
+            header_row = 6
+            for col, header in enumerate(headers, start=1):
+                cell = ws.cell(header_row, col, header)
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = centered
+                cell.border = border
+            ws.row_dimensions[header_row].height = 32
+
+            for row_index, record in enumerate(records, start=header_row + 1):
+                for col, value in enumerate(record, start=1):
+                    cell = ws.cell(row_index, col, value)
+                    cell.font = normal_font
+                    cell.alignment = centered
+                    cell.border = border
+                    if row_index % 2 == 0:
+                        cell.fill = alt_fill
+                ws.row_dimensions[row_index].height = 27
+
+            ws.auto_filter.ref = (
+                f"A{header_row}:{get_column_letter(column_count)}{header_row + len(records)}"
+            )
+            ws.print_title_rows = f"{header_row}:{header_row}"
+            for col, header in enumerate(headers, start=1):
+                width = max(14, min(len(str(header)) + 3, 30))
+                for row_index in range(
+                    header_row + 1, min(header_row + len(records), header_row + 50) + 1
+                ):
+                    width = max(width, min(len(str(ws.cell(row_index, col).value or "")) + 2, 40))
+                ws.column_dimensions[get_column_letter(col)].width = min(width, 40)
+
+            summary = workbook.create_sheet("خلاصه بر اساس ساختمان")
+            summary.sheet_view.rightToLeft = True
+            summary.freeze_panes = "A6"
+            summary.merge_cells("A1:C1")
+            summary["A1"] = "خلاصه سوابق اقامت بر اساس ساختمان"
+            summary["A1"].font = title_font
+            summary["A1"].alignment = centered
+            for col in range(1, 4):
+                summary.cell(1, col).fill = title_fill
+                summary.cell(1, col).border = border
+            summary.merge_cells("A2:C2")
+            summary["A2"] = f"تاریخ تهیه گزارش: {report_date}"
+            summary["A2"].font = bold_font
+            summary["A2"].alignment = Alignment(horizontal="right", vertical="center")
+            summary.merge_cells("A3:C3")
+            summary["A3"] = f"فیلترهای اعمال‌شده: {criteria_text}"
+            summary["A3"].font = normal_font
+            summary["A3"].alignment = Alignment(horizontal="right", vertical="center", wrap_text=True)
+
+            summary_headers = ["ساختمان", "تعداد سوابق", "مجموع نفرات"]
+            for col, header in enumerate(summary_headers, start=1):
+                cell = summary.cell(5, col, header)
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = centered
+                cell.border = border
+
+            building_totals = {}
+            # در جدول فعلی، ساختمان ستون چهارم و تعداد نفرات ستون ششم است.
+            for record in records:
+                building = str(record[3] if len(record) > 3 else "").strip() or "نامشخص"
+                people_text = normalize_digits(str(record[5] if len(record) > 5 else "")).strip()
+                try:
+                    people = int(people_text.replace(",", ""))
+                except (ValueError, TypeError):
+                    people = 0
+                totals = building_totals.setdefault(building, {"records": 0, "people": 0})
+                totals["records"] += 1
+                totals["people"] += people
+
+            summary_row = 6
+            for building, totals in sorted(building_totals.items(), key=lambda item: item[0]):
+                for col, value in enumerate(
+                    (building, totals["records"], totals["people"]), start=1
+                ):
+                    cell = summary.cell(summary_row, col, value)
+                    cell.font = normal_font
+                    cell.alignment = centered
+                    cell.border = border
+                    if summary_row % 2 == 0:
+                        cell.fill = alt_fill
+                summary_row += 1
+
+            summary.cell(summary_row, 1, "جمع کل")
+            summary.cell(summary_row, 2, len(records))
+            summary.cell(summary_row, 3, sum(item["people"] for item in building_totals.values()))
+            for col in range(1, 4):
+                cell = summary.cell(summary_row, col)
+                cell.font = bold_font
+                cell.fill = info_fill
+                cell.alignment = centered
+                cell.border = border
+            for col, width in enumerate((28, 20, 20), start=1):
+                summary.column_dimensions[get_column_letter(col)].width = width
+
+            workbook.save(path)
+        except Exception as exc:
+            QMessageBox.critical(
+                self, "ساخت فایل Excel ناموفق",
+                f"فایل گزارش ذخیره نشد:\\n{exc}"
+            )
+            return
+        finally:
+            if workbook is not None:
+                try:
+                    workbook.close()
+                except Exception:
+                    pass
+
+        QMessageBox.information(
+            self, "خروجی Excel",
+            f"گزارش با موفقیت ذخیره شد:\\n{path}\\n\\nتعداد سوابق خروجی: {len(records)}"
+        )
 
     def _hotel_clear_form(self, *_args, keep_room=False):
         self._hotel_loading_guest_form = True

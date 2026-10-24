@@ -1,0 +1,386 @@
+"""Per-user visual preferences for the PySide6 application.
+
+Preferences are stored in Access by tbluser.userid, so a user's choices follow
+their application account rather than only the current Windows profile.
+"""
+from copy import deepcopy
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+    QMessageBox,
+)
+
+from db_config import get_connection
+
+
+DEFAULT_APPEARANCE_SETTINGS = {
+    "theme": "light",
+    "font_family": "B Nazanin",
+    "font_size": 11,
+    "accent_color": "#1976D2",
+    "table_row_height": 34,
+    "alternating_rows": True,
+}
+
+ACCENT_OPTIONS = [
+    ("آبی", "#1976D2"),
+    ("سبز", "#2E7D32"),
+    ("بنفش", "#6A1B9A"),
+    ("فیروزه‌ای", "#00838F"),
+    ("نارنجی", "#EF6C00"),
+]
+
+
+def _clean_settings(values=None):
+    settings = deepcopy(DEFAULT_APPEARANCE_SETTINGS)
+    if isinstance(values, dict):
+        settings.update(values)
+    if settings.get("theme") not in ("light", "dark"):
+        settings["theme"] = "light"
+    allowed_fonts = ("B Nazanin", "Tahoma", "Segoe UI", "Arial", "Calibri")
+    if settings.get("font_family") not in allowed_fonts:
+        settings["font_family"] = DEFAULT_APPEARANCE_SETTINGS["font_family"]
+    try:
+        settings["font_size"] = max(9, min(16, int(settings["font_size"])))
+    except (TypeError, ValueError):
+        settings["font_size"] = DEFAULT_APPEARANCE_SETTINGS["font_size"]
+    valid_colors = {color for _, color in ACCENT_OPTIONS}
+    if settings.get("accent_color") not in valid_colors:
+        settings["accent_color"] = DEFAULT_APPEARANCE_SETTINGS["accent_color"]
+    try:
+        settings["table_row_height"] = int(settings["table_row_height"])
+    except (TypeError, ValueError):
+        settings["table_row_height"] = DEFAULT_APPEARANCE_SETTINGS["table_row_height"]
+    if settings["table_row_height"] not in (28, 34, 42):
+        settings["table_row_height"] = 34
+    settings["alternating_rows"] = bool(settings.get("alternating_rows", True))
+    return settings
+
+
+def _ensure_settings_table(connection, cursor):
+    """Create the preferences table when upgrading an existing Access database."""
+    try:
+        cursor.execute("SELECT TOP 1 [userid] FROM [tblUserAppearanceSettings]")
+        return
+    except Exception:
+        pass
+
+    try:
+        cursor.execute("""
+            CREATE TABLE [tblUserAppearanceSettings] (
+                [userid] LONG NOT NULL,
+                [theme] TEXT(12),
+                [font_family] TEXT(64),
+                [font_size] INTEGER,
+                [accent_color] TEXT(16),
+                [table_row_height] INTEGER,
+                [alternating_rows] YESNO,
+                PRIMARY KEY ([userid])
+            )
+        """)
+        connection.commit()
+    except Exception:
+        # If another session created it at the same time, the verification query
+        # succeeds. Otherwise the original database error is re-raised.
+        cursor.execute("SELECT TOP 1 [userid] FROM [tblUserAppearanceSettings]")
+
+
+def load_user_appearance_settings(userid):
+    """Load preferences keyed by tbluser.userid; use defaults on first login."""
+    settings = deepcopy(DEFAULT_APPEARANCE_SETTINGS)
+    try:
+        user_id = int(userid)
+    except (TypeError, ValueError):
+        return settings
+
+    connection = None
+    cursor = None
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+        _ensure_settings_table(connection, cursor)
+        cursor.execute("""
+            SELECT [theme], [font_family], [font_size], [accent_color],
+                   [table_row_height], [alternating_rows]
+            FROM [tblUserAppearanceSettings]
+            WHERE [userid] = ?
+        """, (user_id,))
+        row = cursor.fetchone()
+        if row:
+            settings.update({
+                "theme": row[0] or settings["theme"],
+                "font_family": row[1] or settings["font_family"],
+                "font_size": row[2] if row[2] is not None else settings["font_size"],
+                "accent_color": row[3] or settings["accent_color"],
+                "table_row_height": row[4] if row[4] is not None else settings["table_row_height"],
+                "alternating_rows": row[5] if row[5] is not None else settings["alternating_rows"],
+            })
+    except Exception:
+        # Keep the app usable with defaults if preferences are unavailable.
+        pass
+    finally:
+        if cursor is not None:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+        if connection is not None:
+            try:
+                connection.close()
+            except Exception:
+                pass
+    return _clean_settings(settings)
+
+
+def save_user_appearance_settings(userid, values):
+    """Insert or update preferences for one user account."""
+    try:
+        user_id = int(userid)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("شناسه کاربر معتبر نیست؛ تنظیمات ذخیره نشد.") from exc
+
+    settings = _clean_settings(values)
+    connection = None
+    cursor = None
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+        _ensure_settings_table(connection, cursor)
+        cursor.execute(
+            "SELECT [userid] FROM [tblUserAppearanceSettings] WHERE [userid] = ?",
+            (user_id,),
+        )
+        exists = cursor.fetchone() is not None
+        if exists:
+            cursor.execute("""
+                UPDATE [tblUserAppearanceSettings]
+                SET [theme] = ?, [font_family] = ?, [font_size] = ?,
+                    [accent_color] = ?, [table_row_height] = ?,
+                    [alternating_rows] = ?
+                WHERE [userid] = ?
+            """, (
+                settings["theme"], settings["font_family"], settings["font_size"],
+                settings["accent_color"], settings["table_row_height"],
+                settings["alternating_rows"], user_id,
+            ))
+        else:
+            cursor.execute("""
+                INSERT INTO [tblUserAppearanceSettings]
+                ([userid], [theme], [font_family], [font_size], [accent_color],
+                 [table_row_height], [alternating_rows])
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                user_id, settings["theme"], settings["font_family"],
+                settings["font_size"], settings["accent_color"],
+                settings["table_row_height"], settings["alternating_rows"],
+            ))
+        connection.commit()
+    except Exception:
+        if connection is not None:
+            try:
+                connection.rollback()
+            except Exception:
+                pass
+        raise
+    finally:
+        if cursor is not None:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+        if connection is not None:
+            try:
+                connection.close()
+            except Exception:
+                pass
+    return settings
+
+
+class UserAppearanceDialog(QDialog):
+    """Settings dialog. The parent window applies changes only after saving."""
+
+    def __init__(self, parent=None, settings=None):
+        super().__init__(parent)
+        self.setWindowTitle("تنظیمات ظاهری من")
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.setMinimumWidth(430)
+        self._settings = _clean_settings(settings)
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(18, 18, 18, 18)
+        root.setSpacing(12)
+
+        intro = QLabel(
+            "این تنظیمات فقط برای حساب کاربری شما ذخیره می‌شود و روی ظاهر حساب‌های دیگر اثر ندارد."
+        )
+        intro.setWordWrap(True)
+        root.addWidget(intro)
+
+        form = QFormLayout()
+        form.setSpacing(10)
+        root.addLayout(form)
+
+        self.cmbTheme = QComboBox(self)
+        self.cmbTheme.addItem("روشن", "light")
+        self.cmbTheme.addItem("تیره", "dark")
+        form.addRow("پوسته برنامه:", self.cmbTheme)
+
+        self.cmbFontFamily = QComboBox(self)
+        self.cmbFontFamily.addItems(["B Nazanin", "Tahoma", "Segoe UI", "Arial", "Calibri"])
+        form.addRow("نوع قلم:", self.cmbFontFamily)
+
+        self.spinFontSize = QSpinBox(self)
+        self.spinFontSize.setRange(9, 16)
+        self.spinFontSize.setSuffix(" pt")
+        form.addRow("اندازه قلم:", self.spinFontSize)
+
+        self.cmbAccent = QComboBox(self)
+        for label, color in ACCENT_OPTIONS:
+            self.cmbAccent.addItem(label, color)
+        form.addRow("رنگ تأکیدی:", self.cmbAccent)
+
+        self.cmbRowHeight = QComboBox(self)
+        self.cmbRowHeight.addItem("فشرده", 28)
+        self.cmbRowHeight.addItem("استاندارد", 34)
+        self.cmbRowHeight.addItem("درشت و خوانا", 42)
+        form.addRow("ارتفاع ردیف‌های جدول:", self.cmbRowHeight)
+
+        self.chkAlternatingRows = QCheckBox("رنگ متفاوت برای ردیف‌های یکی‌درمیان جدول‌ها", self)
+        form.addRow("", self.chkAlternatingRows)
+
+        actions = QHBoxLayout()
+        self.btnDefaults = QPushButton("بازگشت به پیش‌فرض")
+        self.btnDefaults.clicked.connect(self.reset_defaults)
+        actions.addWidget(self.btnDefaults)
+        actions.addStretch(1)
+        root.addLayout(actions)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel,
+            parent=self,
+        )
+        buttons.button(QDialogButtonBox.StandardButton.Save).setText("ذخیره")
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("انصراف")
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        root.addWidget(buttons)
+
+        self.setStyleSheet("""
+            QDialog { background: white; }
+            QLabel { color: #263445; }
+            QComboBox, QSpinBox { min-height: 30px; padding: 3px 6px; }
+            QPushButton { min-height: 32px; padding: 4px 10px; }
+        """)
+        self._populate(self._settings)
+
+    def _populate(self, settings):
+        index = self.cmbTheme.findData(settings["theme"])
+        self.cmbTheme.setCurrentIndex(max(0, index))
+        index = self.cmbFontFamily.findText(settings["font_family"])
+        self.cmbFontFamily.setCurrentIndex(max(0, index))
+        self.spinFontSize.setValue(settings["font_size"])
+        index = self.cmbAccent.findData(settings["accent_color"])
+        self.cmbAccent.setCurrentIndex(max(0, index))
+        index = self.cmbRowHeight.findData(settings["table_row_height"])
+        self.cmbRowHeight.setCurrentIndex(max(0, index))
+        self.chkAlternatingRows.setChecked(settings["alternating_rows"])
+
+    def reset_defaults(self):
+        self._populate(DEFAULT_APPEARANCE_SETTINGS)
+
+    def selected_settings(self):
+        return _clean_settings({
+            "theme": self.cmbTheme.currentData(),
+            "font_family": self.cmbFontFamily.currentText(),
+            "font_size": self.spinFontSize.value(),
+            "accent_color": self.cmbAccent.currentData(),
+            "table_row_height": self.cmbRowHeight.currentData(),
+            "alternating_rows": self.chkAlternatingRows.isChecked(),
+        })
+
+
+def appearance_stylesheet(settings):
+    """QSS override appended to the existing main.ui style without discarding it."""
+    settings = _clean_settings(settings)
+    accent = settings["accent_color"]
+    font_family = settings["font_family"].replace('"', "")
+    font_size = settings["font_size"]
+    header_size = min(font_size + 1, 18)
+    tab_size = min(font_size + 2, 20)
+
+    if settings["theme"] == "dark":
+        background = "#20252D"
+        panel = "#272E37"
+        input_background = "#252C35"
+        text = "#E7ECF2"
+        muted = "#B8C3D0"
+        border = "#4B5664"
+        alternate = "#2D3540"
+        hover = "#364252"
+        selected_text = "#FFFFFF"
+        qss = f"""
+            QWidget {{ background-color: {background}; color: {text}; }}
+            QMainWindow, QDialog {{ background-color: {background}; color: {text}; }}
+            QFrame#navigationPanel {{ background-color: {panel}; border: 1px solid {border}; border-radius: 8px; }}
+            QFrame#navigationPanel QLabel {{ color: {text}; }}
+            QPushButton {{ background-color: {panel}; color: {text}; border: 1px solid {border}; border-radius: 5px; }}
+            QPushButton:hover {{ background-color: {hover}; border-color: {accent}; }}
+            QPushButton:pressed {{ background-color: {accent}; color: {selected_text}; }}
+            QLineEdit, QComboBox, QSpinBox, QDateEdit, QPlainTextEdit, QTextEdit, QTableWidget, QListWidget {{
+                background-color: {input_background}; color: {text}; border: 1px solid {border}; selection-background-color: {accent}; selection-color: {selected_text};
+            }}
+            QHeaderView::section {{ background-color: {panel}; color: {text}; border: 1px solid {border}; }}
+            QTableWidget {{ background-color: {input_background}; alternate-background-color: {alternate}; gridline-color: {border}; selection-background-color: {accent}; selection-color: {selected_text}; }}
+            QTabBar::tab {{ background-color: {panel}; color: {text}; border: 1px solid {border}; }}
+            QTabBar::tab:selected {{ background-color: {background}; color: {accent}; border-top: 3px solid {accent}; }}
+            QTabWidget::pane {{ border: 1px solid {border}; background-color: {background}; }}
+            QGroupBox {{ color: {text}; border: 1px solid {border}; }}
+            QMenuBar, QMenu {{ background-color: {panel}; color: {text}; }}
+            QMenu::item:selected {{ background-color: {accent}; color: {selected_text}; }}
+            QStatusBar {{ background-color: {panel}; color: {text}; }}
+            QToolTip {{ background-color: {panel}; color: {text}; border: 1px solid {border}; }}
+        """
+    else:
+        background = "#FFFFFF"
+        text = "#263445"
+        border = "#C7D0DB"
+        hover = "#DCEAF8"
+        tint = {
+            "#1976D2": "#D7E9FA",
+            "#2E7D32": "#DDF1E0",
+            "#6A1B9A": "#EBDDFA",
+            "#00838F": "#D6F1F2",
+            "#EF6C00": "#FCE8D8",
+        }.get(accent, "#D7E9FA")
+        qss = f"""
+            QPushButton:hover {{ border-color: {accent}; background-color: {hover}; }}
+            QPushButton:focus {{ border-color: {accent}; }}
+            QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDateEdit:focus, QPlainTextEdit:focus, QTextEdit:focus {{
+                border: 1px solid {accent};
+            }}
+            QTabBar::tab:selected {{ color: {accent}; border-top: 3px solid {accent}; }}
+            QTableWidget::item:selected {{ background-color: {tint}; color: {text}; }}
+            QHeaderView::section {{ border-color: {border}; }}
+        """
+
+    font_qss = f"""
+        QWidget {{ font-family: "{font_family}"; }}
+        QLabel, QLineEdit, QComboBox, QSpinBox, QDateEdit, QPlainTextEdit, QTextEdit, QPushButton, QTableWidget {{
+            font-family: "{font_family}"; font-size: {font_size}pt;
+        }}
+        QGroupBox {{ font-family: "{font_family}"; font-size: {header_size}pt; }}
+        QHeaderView::section {{ font-family: "{font_family}"; font-size: {font_size}pt; }}
+        QTabBar::tab {{ font-family: "{font_family}"; font-size: {tab_size}pt; }}
+    """
+    return qss + font_qss

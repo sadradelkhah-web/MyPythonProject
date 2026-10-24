@@ -3752,15 +3752,13 @@ class MainWindow(QMainWindow):
         # در این سامانه ثبت درخواست به معنی تحویل قطعی است؛ دکمه تحویل جداگانه استفاده نمی‌شود.
         self.ui.btnMtoTahrirDeliver.hide()
         self.ui.btnMtoTahrirRefresh.clicked.connect(self.load_mto_tahrir_requests)
-        self.ui.txtMtoTahrirSearch.textChanged.connect(self.load_mto_tahrir_requests)
-        # فیلتر بازه تاریخ؛ جستجو بر اساس شرح کالا نیز صریحاً حفظ می‌شود.
+        self.ui.btnMtoTahrirSearch.clicked.connect(self.load_mto_tahrir_requests)
+        self.ui.btnMtoTahrirExportExcel.clicked.connect(self.export_mto_tahrir_report_excel)
+        # فیلتر واحد و بازه تاریخ فقط با دکمه «جستجو» اعمال می‌شوند.
         for date_name in ("txtMtoTahrirFromDate", "txtMtoTahrirToDate"):
             date_widget = getattr(self.ui, date_name, None)
             if date_widget is not None:
                 install_calendar_action(date_widget)
-                # پس از کامل‌شدن تاریخ یا انتخاب از تقویم فیلتر کن؛ برای هر رقم پیام خطا نده.
-                date_widget.textChanged.connect(self._mto_tahrir_date_filter_changed)
-                date_widget.editingFinished.connect(self.load_mto_tahrir_requests)
         self.ui.tblMtoTahrirList.itemSelectionChanged.connect(self.select_mto_tahrir_request)
         self.ui.txtMtoTahrirRecorder.setReadOnly(True)
         self.ui.txtMtoTahrirEditor.setReadOnly(True)
@@ -3880,6 +3878,72 @@ class MainWindow(QMainWindow):
             combo.setEditable(True)
             if current:
                 combo.setCurrentText(current)
+
+    def _refresh_mto_tahrir_filter_units(self):
+        """فهرست واحدهای فیلتر را از واحدهای شناخته‌شده و درخواست‌های ثبت‌شده تازه می‌کند."""
+        combo = getattr(self.ui, "cmbMtoTahrirFilterVahed", None)
+        if combo is None:
+            return
+        current = combo.currentText().strip()
+        values = []
+        source_combo = getattr(self.ui, "cmbMtoTahrirVahed", None)
+        if source_combo is not None:
+            values.extend(
+                source_combo.itemText(i).strip()
+                for i in range(source_combo.count())
+                if source_combo.itemText(i).strip()
+            )
+        conn = None
+        try:
+            conn = get_connection()
+            cur = conn.cursor()
+            for table_name in ("tblkar", "TBL_Mto_tahrir"):
+                try:
+                    cur.execute(
+                        f"SELECT DISTINCT [vahed] FROM [{table_name}] "
+                        "WHERE [vahed] IS NOT NULL ORDER BY [vahed]"
+                    )
+                    values.extend(
+                        str(row[0]).strip() for row in cur.fetchall()
+                        if str(row[0] or "").strip()
+                    )
+                except Exception:
+                    # اگر جدول/فیلد در نسخه قدیمی موجود نبود، از منبع دیگر استفاده می‌کنیم.
+                    continue
+        except Exception:
+            pass
+        finally:
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+        unique_values = []
+        seen = set()
+        for value in values:
+            value = str(value or "").strip()
+            key = self._tahrir_norm(value).casefold()
+            if not key or key in seen or key in ("همه واحدها", "همه"):
+                continue
+            seen.add(key)
+            unique_values.append(value)
+
+        combo.blockSignals(True)
+        combo.clear()
+        combo.addItem("همه واحدها")
+        combo.addItems(unique_values)
+        if current:
+            normalized_current = self._tahrir_norm(current).casefold()
+            match = next(
+                (value for value in unique_values
+                 if self._tahrir_norm(value).casefold() == normalized_current),
+                None,
+            )
+            combo.setCurrentText(match or "همه واحدها")
+        else:
+            combo.setCurrentIndex(0)
+        combo.blockSignals(False)
 
     @staticmethod
     def _tahrir_today():
@@ -4028,49 +4092,373 @@ class MainWindow(QMainWindow):
             self.load_mto_tahrir_requests()
 
     def load_mto_tahrir_requests(self, *_):
-        table = self.ui.tblMtoTahrirList; selected = self._mto_tahrir_id
+        table = self.ui.tblMtoTahrirList
+        selected = self._mto_tahrir_id
+        conn = None
         try:
-            conn = get_connection(); cur = conn.cursor()
-            cur.execute("SELECT [ID], [Date], [Description], [QTY], [Unit], [vahed], [Recorder], [Taeidkonandeh], [Tahvilgirandeh], [Editor] FROM [TBL_Mto_tahrir] ORDER BY [Date] DESC, [ID] DESC")
-            rows = cur.fetchall(); conn.close()
+            self._refresh_mto_tahrir_filter_units()
+            unit_widget = getattr(self.ui, "cmbMtoTahrirFilterVahed", None)
+            selected_unit = self._tahrir_norm(
+                unit_widget.currentText() if unit_widget is not None else ""
+            ).casefold()
+            filter_all_units = not selected_unit or selected_unit in ("همه واحدها", "همه")
+
+            conn = get_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT [ID], [Date], [Description], [QTY], [Unit], [vahed], "
+                "[Recorder], [Taeidkonandeh], [Tahvilgirandeh], [Editor] "
+                "FROM [TBL_Mto_tahrir]"
+            )
+            rows = cur.fetchall()
+
             query = self._tahrir_norm(self.ui.txtMtoTahrirSearch.text()).casefold()
-            from_text = self._tahrir_norm(getattr(self.ui, "txtMtoTahrirFromDate", None).text() if getattr(self.ui, "txtMtoTahrirFromDate", None) is not None else "")
-            to_text = self._tahrir_norm(getattr(self.ui, "txtMtoTahrirToDate", None).text() if getattr(self.ui, "txtMtoTahrirToDate", None) is not None else "")
-            # هنگام تایپ تاریخ، تا زمانی که هر ۸ رقم کامل نشده فیلتر اعمال نمی‌شود.
-            # این کار جلوی خطاهای پیاپی برای ورودی‌هایی مثل 1405/0 را می‌گیرد.
-            from_compact = from_text.replace("/", "").replace("-", "")
-            to_compact = to_text.replace("/", "").replace("-", "")
-            from_date = self._tahrir_db_date(from_text) if len(from_compact) == 8 else None
-            to_date = self._tahrir_db_date(to_text) if len(to_compact) == 8 else None
+            from_text = self._tahrir_norm(
+                getattr(self.ui, "txtMtoTahrirFromDate", None).text()
+                if getattr(self.ui, "txtMtoTahrirFromDate", None) is not None else ""
+            )
+            to_text = self._tahrir_norm(
+                getattr(self.ui, "txtMtoTahrirToDate", None).text()
+                if getattr(self.ui, "txtMtoTahrirToDate", None) is not None else ""
+            )
+            from_compact = from_text.replace("/", "").replace("-", "").strip()
+            to_compact = to_text.replace("/", "").replace("-", "").strip()
+            if from_compact and (len(from_compact) != 8 or not from_compact.isdigit()):
+                raise ValueError("تاریخ شروع را به‌صورت شمسی YYYY/MM/DD وارد کنید؛ نمونه 1405/07/01")
+            if to_compact and (len(to_compact) != 8 or not to_compact.isdigit()):
+                raise ValueError("تاریخ پایان را به‌صورت شمسی YYYY/MM/DD وارد کنید؛ نمونه 1405/07/30")
+
+            from_date = self._tahrir_db_date(from_text) if from_compact else None
+            to_date = self._tahrir_db_date(to_text) if to_compact else None
             if from_date is not None and to_date is not None and from_date > to_date:
                 raise ValueError("تاریخ شروع بازه نباید بعد از تاریخ پایان باشد.")
-            filtered=[]
-            for r in rows:
-                # جستجو در شرح کالا و تمام ستون‌های اصلی درخواست (از جمله تاریخ و تعداد).
-                searchable = [self._tahrir_norm(v).casefold() for v in r]
+
+            filtered = []
+            for row in rows:
+                row = tuple(row)
+                searchable = [self._tahrir_norm(value).casefold() for value in row]
                 if query and not any(query in value for value in searchable):
                     continue
-                row_date_text = self._tahrir_norm(r[1]).replace("/", "").replace("-", "")
-                # Access ممکن است تاریخ را به صورت عدد، متن یا datetime برگرداند.
-                if len(row_date_text) >= 8 and row_date_text[:8].isdigit():
-                    row_date = int(row_date_text[:8])
-                else:
-                    row_date = None
+
+                row_unit = self._tahrir_norm(row[5]).casefold()
+                if not filter_all_units and row_unit != selected_unit:
+                    continue
+
+                row_date_digits = "".join(
+                    char for char in self._tahrir_norm(row[1]) if char.isdigit()
+                )
+                row_date = int(row_date_digits[:8]) if len(row_date_digits) >= 8 else None
                 if from_date is not None and (row_date is None or row_date < from_date):
                     continue
                 if to_date is not None and (row_date is None or row_date > to_date):
                     continue
-                filtered.append(tuple(r))
-            self._mto_tahrir_rows=filtered; table.setRowCount(len(filtered))
-            for i,r in enumerate(filtered):
-                values=[i + 1, self._tahrir_display_date(r[1]), r[2], r[3], r[4], r[5], r[6], r[7], r[8]]
-                for j,value in enumerate(values):
-                    item=QTableWidgetItem(format_numeric_display(value)); item.setTextAlignment(Qt.AlignmentFlag.AlignCenter); table.setItem(i,j,item)
+                filtered.append(row)
+
+            def sort_key(row):
+                date_digits = "".join(
+                    char for char in self._tahrir_norm(row[1]) if char.isdigit()
+                )
+                try:
+                    date_number = int(date_digits[:8]) if len(date_digits) >= 8 else 0
+                except (TypeError, ValueError):
+                    date_number = 0
+                try:
+                    id_number = int(normalize_digits(str(row[0] or "0")))
+                except (TypeError, ValueError):
+                    id_number = 0
+                return date_number, id_number
+
+            filtered.sort(key=sort_key, reverse=True)
+            self._mto_tahrir_rows = filtered
+            table.setRowCount(len(filtered))
+            for index, row in enumerate(filtered):
+                values = [
+                    index + 1, self._tahrir_display_date(row[1]), row[2], row[3],
+                    row[4], row[5], row[6], row[7], row[8]
+                ]
+                for column, value in enumerate(values):
+                    item = QTableWidgetItem(format_numeric_display(value))
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                    table.setItem(index, column, item)
             table.resizeColumnsToContents()
+
             if selected is not None:
-                for i,r in enumerate(filtered):
-                    if str(r[0])==str(selected): table.selectRow(i); break
-        except Exception as exc: self._tahrir_db_error("تقاضای لوازم‌التحریر", exc)
+                selected_index = next(
+                    (index for index, row in enumerate(filtered)
+                     if str(row[0]) == str(selected)),
+                    None,
+                )
+                if selected_index is not None:
+                    table.selectRow(selected_index)
+                else:
+                    self._mto_tahrir_id = None
+                    table.clearSelection()
+        except Exception as exc:
+            self._tahrir_db_error("تقاضای لوازم‌التحریر", exc)
+        finally:
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+    def export_mto_tahrir_report_excel(self, *_):
+        """خروجی Excel از همان نتایج فیلترشده، همراه با خلاصه و تفکیک واحدها."""
+        rows = list(getattr(self, "_mto_tahrir_rows", []))
+        if not rows:
+            QMessageBox.information(
+                self, "گزارش لوازم‌التحریر",
+                "برای فیلترهای فعلی رکوردی وجود ندارد. ابتدا جستجو را اجرا کنید."
+            )
+            return
+
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+            from openpyxl.utils import get_column_letter
+        except ImportError:
+            QMessageBox.warning(
+                self, "خروجی Excel",
+                "کتابخانه openpyxl نصب نیست. در ترمینال محیط برنامه اجرا کنید:\n"
+                "python -m pip install openpyxl"
+            )
+            return
+
+        def quantity_number(value):
+            try:
+                text = self._tahrir_norm(value).replace(",", ".")
+                return float(text) if text else 0.0
+            except (TypeError, ValueError):
+                return 0.0
+
+        def excel_quantity(value):
+            number = quantity_number(value)
+            return int(number) if number.is_integer() else number
+
+        def date_for_excel(value):
+            if value is None:
+                return ""
+            if hasattr(value, "strftime"):
+                try:
+                    return value.strftime("%Y/%m/%d")
+                except Exception:
+                    pass
+            return self._tahrir_display_date(value)
+
+        def date_sort_key(row):
+            digits = "".join(
+                char for char in self._tahrir_norm(row[1]) if char.isdigit()
+            )
+            try:
+                date_number = int(digits[:8]) if len(digits) >= 8 else 0
+            except (TypeError, ValueError):
+                date_number = 0
+            try:
+                id_number = int(normalize_digits(str(row[0] or "0")))
+            except (TypeError, ValueError):
+                id_number = 0
+            return date_number, id_number
+
+        rows.sort(key=date_sort_key, reverse=True)
+        unit_widget = getattr(self.ui, "cmbMtoTahrirFilterVahed", None)
+        unit_filter = unit_widget.currentText().strip() if unit_widget is not None else "همه واحدها"
+        from_filter = self.ui.txtMtoTahrirFromDate.text().strip()
+        to_filter = self.ui.txtMtoTahrirToDate.text().strip()
+        text_filter = self.ui.txtMtoTahrirSearch.text().strip()
+        filters = [
+            f"واحد متقاضی: {unit_filter or 'همه واحدها'}",
+            f"از تاریخ: {from_filter or 'ابتدا'}",
+            f"تا تاریخ: {to_filter or 'بدون محدودیت'}",
+        ]
+        if text_filter:
+            filters.append(f"عبارت جستجو: {text_filter}")
+        filter_summary = " | ".join(filters)
+        report_date = self._tahrir_today()
+        total_quantity = sum(quantity_number(row[3]) for row in rows)
+        total_quantity_display = int(total_quantity) if total_quantity.is_integer() else total_quantity
+
+        path, _ = QFileDialog.getSaveFileName(
+            self, "ذخیره گزارش درخواست‌های لوازم‌التحریر",
+            f"گزارش_درخواست_لوازم‌التحریر_{report_date.replace('/', '-')}.xlsx",
+            "فایل Excel (*.xlsx)"
+        )
+        if not path:
+            return
+        if not path.lower().endswith(".xlsx"):
+            path += ".xlsx"
+
+        headers = [
+            "شناسه درخواست", "تاریخ", "شرح کالا", "تعداد", "واحد کالا",
+            "واحد متقاضی", "ثبت‌کننده", "تأییدکننده", "تحویل‌گیرنده",
+            "آخرین ویرایش‌کننده"
+        ]
+        workbook = None
+        try:
+            workbook = Workbook()
+            ws = workbook.active
+            ws.title = "گزارش درخواست‌ها"
+            ws.sheet_view.rightToLeft = True
+            ws.freeze_panes = "A8"
+            ws.page_setup.fitToWidth = 1
+            ws.page_setup.fitToHeight = 0
+            ws.page_setup.orientation = "landscape"
+
+            blue_fill = PatternFill("solid", fgColor="1F4E78")
+            light_fill = PatternFill("solid", fgColor="D9EAF7")
+            alternate_fill = PatternFill("solid", fgColor="F4F7FA")
+            white_bold = Font(name="B Nazanin", size=11, bold=True, color="FFFFFF")
+            normal_font = Font(name="B Nazanin", size=10, color="202020")
+            title_font = Font(name="B Nazanin", size=16, bold=True, color="FFFFFF")
+            bold_font = Font(name="B Nazanin", size=10, bold=True, color="202020")
+            thin_side = Side(style="thin", color="C7D0DB")
+            cell_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+            centered = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+            ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
+            ws.cell(1, 1, "گزارش درخواست‌های لوازم‌التحریر")
+            for col in range(1, len(headers) + 1):
+                cell = ws.cell(1, col)
+                cell.fill = blue_fill
+                cell.border = cell_border
+            ws.cell(1, 1).font = title_font
+            ws.cell(1, 1).alignment = centered
+            ws.row_dimensions[1].height = 30
+
+            ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=len(headers))
+            ws.cell(2, 1, f"تاریخ تهیه گزارش: {report_date}")
+            ws.cell(2, 1).font = bold_font
+            ws.cell(2, 1).alignment = Alignment(horizontal="right", vertical="center")
+            ws.merge_cells(start_row=3, start_column=1, end_row=3, end_column=len(headers))
+            ws.cell(3, 1, f"فیلترهای اعمال‌شده: {filter_summary}")
+            ws.cell(3, 1).font = normal_font
+            ws.cell(3, 1).alignment = Alignment(horizontal="right", vertical="center", wrap_text=True)
+            ws.row_dimensions[3].height = 28
+
+            ws.cell(4, 1, "تعداد کل درخواست‌ها")
+            ws.cell(4, 2, len(rows))
+            ws.cell(4, 4, "جمع تعداد اقلام درخواستی")
+            ws.cell(4, 5, total_quantity_display)
+            for col in (1, 2, 4, 5):
+                cell = ws.cell(4, col)
+                cell.fill = light_fill
+                cell.font = bold_font
+                cell.alignment = centered
+                cell.border = cell_border
+
+            header_row = 7
+            for col, header in enumerate(headers, start=1):
+                cell = ws.cell(header_row, col, header)
+                cell.fill = blue_fill
+                cell.font = white_bold
+                cell.alignment = centered
+                cell.border = cell_border
+            ws.row_dimensions[header_row].height = 32
+
+            for row_index, row in enumerate(rows, start=header_row + 1):
+                values = [
+                    row[0], date_for_excel(row[1]), row[2] or "", excel_quantity(row[3]),
+                    row[4] or "", row[5] or "", row[6] or "", row[7] or "",
+                    row[8] or "", row[9] or ""
+                ]
+                for col, value in enumerate(values, start=1):
+                    cell = ws.cell(row_index, col, value)
+                    cell.font = normal_font
+                    cell.alignment = centered
+                    cell.border = cell_border
+                    if row_index % 2 == 0:
+                        cell.fill = alternate_fill
+                    if col == 4:
+                        cell.number_format = "#,##0.##"
+                ws.row_dimensions[row_index].height = 25
+
+            ws.auto_filter.ref = f"A{header_row}:J{header_row + len(rows)}"
+            widths = [15, 14, 30, 12, 15, 24, 20, 20, 22, 22]
+            for col, width in enumerate(widths, start=1):
+                ws.column_dimensions[get_column_letter(col)].width = width
+            ws.print_title_rows = f"{header_row}:{header_row}"
+
+            summary = workbook.create_sheet("خلاصه بر اساس واحد")
+            summary.sheet_view.rightToLeft = True
+            summary.freeze_panes = "A6"
+            summary.merge_cells("A1:C1")
+            summary["A1"] = "خلاصه درخواست‌های لوازم‌التحریر بر اساس واحد"
+            for col in range(1, 4):
+                summary.cell(1, col).fill = blue_fill
+                summary.cell(1, col).border = cell_border
+            summary["A1"].font = title_font
+            summary["A1"].alignment = centered
+            summary.row_dimensions[1].height = 30
+            summary.merge_cells("A2:C2")
+            summary["A2"] = f"تاریخ تهیه گزارش: {report_date}"
+            summary["A2"].font = bold_font
+            summary["A2"].alignment = Alignment(horizontal="right", vertical="center")
+            summary.merge_cells("A3:C3")
+            summary["A3"] = f"فیلترهای اعمال‌شده: {filter_summary}"
+            summary["A3"].font = normal_font
+            summary["A3"].alignment = Alignment(horizontal="right", vertical="center", wrap_text=True)
+
+            summary_headers = ["واحد متقاضی", "تعداد درخواست‌ها", "جمع تعداد اقلام"]
+            for col, header in enumerate(summary_headers, start=1):
+                cell = summary.cell(5, col, header)
+                cell.fill = blue_fill
+                cell.font = white_bold
+                cell.alignment = centered
+                cell.border = cell_border
+
+            unit_totals = {}
+            for row in rows:
+                unit_name = str(row[5] or "").strip() or "نامشخص"
+                key = self._tahrir_norm(unit_name).casefold()
+                if key not in unit_totals:
+                    unit_totals[key] = {"name": unit_name, "count": 0, "quantity": 0.0}
+                unit_totals[key]["count"] += 1
+                unit_totals[key]["quantity"] += quantity_number(row[3])
+
+            summary_row = 6
+            for data in sorted(unit_totals.values(), key=lambda item: item["name"]):
+                quantity = data["quantity"]
+                quantity = int(quantity) if quantity.is_integer() else quantity
+                values = [data["name"], data["count"], quantity]
+                for col, value in enumerate(values, start=1):
+                    cell = summary.cell(summary_row, col, value)
+                    cell.font = normal_font
+                    cell.alignment = centered
+                    cell.border = cell_border
+                    if summary_row % 2 == 0:
+                        cell.fill = alternate_fill
+                summary_row += 1
+
+            for col, value in enumerate(["جمع کل", len(rows), total_quantity_display], start=1):
+                cell = summary.cell(summary_row, col, value)
+                cell.fill = light_fill
+                cell.font = bold_font
+                cell.alignment = centered
+                cell.border = cell_border
+            summary.auto_filter.ref = f"A5:C{summary_row - 1}"
+            summary.column_dimensions["A"].width = 32
+            summary.column_dimensions["B"].width = 22
+            summary.column_dimensions["C"].width = 22
+
+            workbook.save(path)
+            workbook.close()
+            workbook = None
+            QMessageBox.information(
+                self, "گزارش Excel",
+                f"گزارش با موفقیت ذخیره شد:\n{path}\n\n"
+                f"تعداد درخواست‌ها: {len(rows)}\n"
+                f"جمع تعداد اقلام: {total_quantity_display}"
+            )
+        except Exception as exc:
+            QMessageBox.critical(
+                self, "گزارش Excel",
+                f"ساخت یا ذخیره گزارش ناموفق بود:\n{exc}"
+            )
+        finally:
+            if workbook is not None:
+                try:
+                    workbook.close()
+                except Exception:
+                    pass
 
     def clear_mto_tahrir_form(self):
         self._mto_tahrir_id=None

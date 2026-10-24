@@ -2063,6 +2063,22 @@ class Ui_MainWindow(object):
 
         self.gridMtoTahrirFilters.addWidget(self.txtMtoTahrirToDate, 1, 3, 1, 1)
 
+        self.lblMtoTahrirFilterVahed = QLabel(self.groupMtoTahrirFilters)
+        self.lblMtoTahrirFilterVahed.setObjectName(u"lblMtoTahrirFilterVahed")
+        self.gridMtoTahrirFilters.addWidget(self.lblMtoTahrirFilterVahed, 2, 0, 1, 1)
+
+        self.cmbMtoTahrirFilterVahed = QComboBox(self.groupMtoTahrirFilters)
+        self.cmbMtoTahrirFilterVahed.setObjectName(u"cmbMtoTahrirFilterVahed")
+        self.gridMtoTahrirFilters.addWidget(self.cmbMtoTahrirFilterVahed, 2, 1, 1, 1)
+
+        self.btnMtoTahrirSearch = QPushButton(self.groupMtoTahrirFilters)
+        self.btnMtoTahrirSearch.setObjectName(u"btnMtoTahrirSearch")
+        self.gridMtoTahrirFilters.addWidget(self.btnMtoTahrirSearch, 2, 2, 1, 1)
+
+        self.btnMtoTahrirExportExcel = QPushButton(self.groupMtoTahrirFilters)
+        self.btnMtoTahrirExportExcel.setObjectName(u"btnMtoTahrirExportExcel")
+        self.gridMtoTahrirFilters.addWidget(self.btnMtoTahrirExportExcel, 2, 3, 1, 3)
+
 
         self.verticalLayoutMtoTahrir.addWidget(self.groupMtoTahrirFilters)
 
@@ -2772,6 +2788,10 @@ class Ui_MainWindow(object):
         self.txtMtoTahrirFromDate.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0634\u0645\u0633\u06cc: 1405/07/01", None))
         self.lblMtoTahrirToDate.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0627 \u062a\u0627\u0631\u06cc\u062e:", None))
         self.txtMtoTahrirToDate.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0634\u0645\u0633\u06cc: 1405/07/30", None))
+        self.lblMtoTahrirFilterVahed.setText(QCoreApplication.translate("MainWindow", u"واحد متقاضی:", None))
+        self.btnMtoTahrirSearch.setText(QCoreApplication.translate("MainWindow", u"جستجو", None))
+        self.btnMtoTahrirExportExcel.setText(QCoreApplication.translate("MainWindow", u"گزارش Excel", None))
+        self.btnMtoTahrirExportExcel.setToolTip(QCoreApplication.translate("MainWindow", u"خروجی Excel از نتایج فیلترشده به‌همراه خلاصه تعداد درخواست‌ها به تفکیک واحد", None))
         self.groupMtoTahrirInfo.setTitle(QCoreApplication.translate("MainWindow", u"\u0627\u0637\u0644\u0627\u0639\u0627\u062a \u062f\u0631\u062e\u0648\u0627\u0633\u062a", None))
         self.lblMtoTahrirDate.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0627\u0631\u06cc\u062e \u0634\u0645\u0633\u06cc:", None))
         self.txtMtoTahrirDate.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0645\u062b\u0644\u0627\u064b 1405/07/27", None))

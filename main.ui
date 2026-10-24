@@ -3189,6 +3189,33 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
              </property>
             </widget>
            </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="lblMtoTahrirFilterVahed">
+             <property name="text">
+              <string>واحد متقاضی:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QComboBox" name="cmbMtoTahrirFilterVahed" />
+           </item>
+           <item row="2" column="2">
+            <widget class="QPushButton" name="btnMtoTahrirSearch">
+             <property name="text">
+              <string>جستجو</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="3" colspan="3">
+            <widget class="QPushButton" name="btnMtoTahrirExportExcel">
+             <property name="toolTip">
+              <string>خروجی Excel از نتایج فیلترشده به‌همراه خلاصه تعداد درخواست‌ها به تفکیک واحد</string>
+             </property>
+             <property name="text">
+              <string>گزارش Excel</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>

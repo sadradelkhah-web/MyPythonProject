@@ -1025,8 +1025,24 @@ class MainWindow(QMainWindow):
             # Append a widget-specific font rule after any existing inline style;
             # this prevents old hard-coded fonts from blocking the user's choice.
             widget_name = widget.objectName()
-            class_name = widget.metaObject().className()
-            selector = class_name + (f"#{widget_name}" if widget_name else "")
+            # Use Qt's built-in base class for custom subclasses (for example,
+            # HotelRoomCardButton is still styled by the QPushButton selector).
+            selector_class = "QWidget"
+            for candidate in (
+                "QTableWidget", "QTableView", "QTreeWidget", "QTreeView",
+                "QListWidget", "QPushButton", "QToolButton", "QLineEdit",
+                "QComboBox", "QSpinBox", "QDateTimeEdit", "QDateEdit",
+                "QCheckBox", "QRadioButton", "QLabel", "QGroupBox",
+                "QMenuBar", "QMenu", "QStatusBar", "QTabWidget", "QTabBar",
+                "QFrame", "QWidget",
+            ):
+                try:
+                    if widget.inherits(candidate):
+                        selector_class = candidate
+                        break
+                except Exception:
+                    continue
+            selector = selector_class + (f"#{widget_name}" if widget_name else "")
             widget._appearance_font_override = (
                 f'{selector} {{ font-family: "{family}"; font-size: {font_size}pt; }}'
             )

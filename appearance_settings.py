@@ -85,7 +85,7 @@ def _ensure_settings_table(connection, cursor):
                 [font_size] INTEGER,
                 [accent_color] TEXT(16),
                 [table_row_height] INTEGER,
-                [alternating_rows] YESNO,
+                [alternating_rows] BIT,
                 PRIMARY KEY ([userid])
             )
         """)
@@ -276,11 +276,32 @@ class UserAppearanceDialog(QDialog):
         buttons.rejected.connect(self.reject)
         root.addWidget(buttons)
 
-        self.setStyleSheet("""
-            QDialog { background: white; }
-            QLabel { color: #263445; }
-            QComboBox, QSpinBox { min-height: 30px; padding: 3px 6px; }
-            QPushButton { min-height: 32px; padding: 4px 10px; }
+        if self._settings["theme"] == "dark":
+            dialog_background = "#20252D"
+            dialog_text = "#E7ECF2"
+            control_background = "#252C35"
+            dialog_border = "#4B5664"
+        else:
+            dialog_background = "#FFFFFF"
+            dialog_text = "#263445"
+            control_background = "#FFFFFF"
+            dialog_border = "#C7D0DB"
+        dialog_accent = self._settings["accent_color"]
+        self.setStyleSheet(f"""
+            QDialog {{ background: {dialog_background}; color: {dialog_text}; }}
+            QLabel {{ color: {dialog_text}; }}
+            QComboBox, QSpinBox {{
+                min-height: 30px; padding: 3px 6px;
+                background: {control_background}; color: {dialog_text};
+                border: 1px solid {dialog_border}; border-radius: 4px;
+            }}
+            QComboBox:focus, QSpinBox:focus {{ border: 1px solid {dialog_accent}; }}
+            QPushButton {{
+                min-height: 32px; padding: 4px 10px;
+                background: {control_background}; color: {dialog_text};
+                border: 1px solid {dialog_border}; border-radius: 4px;
+            }}
+            QPushButton:hover {{ border-color: {dialog_accent}; }}
         """)
         self._populate(self._settings)
 

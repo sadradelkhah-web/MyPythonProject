@@ -1029,6 +1029,23 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
            <item row="1" column="5">
             <widget class="QLineEdit" name="txtReportTo" />
            </item>
+           <item row="2" column="0" colspan="3">
+            <widget class="QLabel" name="lblReportResultCount">
+             <property name="text">
+              <string>آماده نمایش گزارش</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="3">
+            <widget class="QPushButton" name="btnExportReport">
+             <property name="text">
+              <string>خروجی Excel</string>
+             </property>
+             <property name="toolTip">
+              <string>خروجی اکسل از نتایج فیلترشده گزارش و پیگیری کارها</string>
+             </property>
+            </widget>
+           </item>
            <item row="2" column="4">
             <widget class="QPushButton" name="btnRefreshReport">
              <property name="text">

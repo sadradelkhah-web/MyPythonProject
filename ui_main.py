@@ -704,6 +704,16 @@ class Ui_MainWindow(object):
 
         self.gridReportFilters.addWidget(self.txtReportTo, 1, 5, 1, 1)
 
+        self.lblReportResultCount = QLabel(self.groupReportFilters)
+        self.lblReportResultCount.setObjectName(u"lblReportResultCount")
+
+        self.gridReportFilters.addWidget(self.lblReportResultCount, 2, 0, 1, 3)
+
+        self.btnExportReport = QPushButton(self.groupReportFilters)
+        self.btnExportReport.setObjectName(u"btnExportReport")
+
+        self.gridReportFilters.addWidget(self.btnExportReport, 2, 3, 1, 1)
+
         self.btnRefreshReport = QPushButton(self.groupReportFilters)
         self.btnRefreshReport.setObjectName(u"btnRefreshReport")
 
@@ -2455,6 +2465,11 @@ class Ui_MainWindow(object):
         self.lblReportStatus.setText(QCoreApplication.translate("MainWindow", u"\u0648\u0636\u0639\u06cc\u062a \u06a9\u0627\u0631:", None))
         self.lblReportFrom.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0632 \u062a\u0627\u0631\u06cc\u062e (\u0634\u0645\u0633\u06cc):", None))
         self.lblReportTo.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0627 \u062a\u0627\u0631\u06cc\u062e (\u0634\u0645\u0633\u06cc):", None))
+        self.lblReportResultCount.setText(QCoreApplication.translate("MainWindow", u"\u0622\u0645\u0627\u062f\u0647 \u0646\u0645\u0627\u06cc\u0634 \u06af\u0632\u0627\u0631\u0634", None))
+        self.btnExportReport.setText(QCoreApplication.translate("MainWindow", u"\u062e\u0631\u0648\u062c\u06cc Excel", None))
+#if QT_CONFIG(tooltip)
+        self.btnExportReport.setToolTip(QCoreApplication.translate("MainWindow", u"\u062e\u0631\u0648\u062c\u06cc \u0627\u06a9\u0633\u0644 \u0627\u0632 \u0646\u062a\u0627\u06cc\u062c \u0641\u06cc\u0644\u062a\u0631\u0634\u062f\u0647 \u06af\u0632\u0627\u0631\u0634 \u0648 \u067e\u06cc\u06af\u06cc\u0631\u06cc \u06a9\u0627\u0631\u0647\u0627", None))
+#endif // QT_CONFIG(tooltip)
         self.btnRefreshReport.setText(QCoreApplication.translate("MainWindow", u"\u0646\u0645\u0627\u06cc\u0634 \u06af\u0632\u0627\u0631\u0634", None))
         self.btnClearReportFilters.setText(QCoreApplication.translate("MainWindow", u"\u062d\u0630\u0641 \u0641\u06cc\u0644\u062a\u0631\u0647\u0627", None))
         ___qtablewidgetitem4 = self.tblReportList.horizontalHeaderItem(0)

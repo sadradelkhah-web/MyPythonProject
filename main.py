@@ -898,7 +898,7 @@ class MainWindow(QMainWindow):
         except Exception as exc:
             QMessageBox.critical(
                 self, "ذخیره تنظیمات ناموفق",
-                f"تنظیمات ظاهری ذخیره نشدند:\\n{exc}"
+                f"تنظیمات ظاهری ذخیره نشدند:\n{exc}"
             )
             return
 
@@ -936,7 +936,7 @@ class MainWindow(QMainWindow):
             if not hasattr(widget, "_appearance_original_stylesheet"):
                 widget._appearance_original_stylesheet = widget.styleSheet()
 
-        self.setStyleSheet(self._appearance_base_stylesheet + "\\n" + stylesheet)
+        self.setStyleSheet(self._appearance_base_stylesheet + "\n" + stylesheet)
 
         for widget in widgets:
             base_font = widget._appearance_original_font
@@ -953,7 +953,7 @@ class MainWindow(QMainWindow):
         # نیز اضافه می‌کنیم تا در حالت تیره رنگ سفیدِ ثابت باقی نماند.
         for table in self.findChildren(QTableWidget):
             base_style = table._appearance_original_stylesheet
-            table.setStyleSheet(base_style + "\\n" + stylesheet)
+            table.setStyleSheet(base_style + "\n" + stylesheet)
             table.setAlternatingRowColors(bool(settings.get("alternating_rows", True)))
             table.verticalHeader().setDefaultSectionSize(row_height)
             table.horizontalHeader().setMinimumHeight(max(32, font_size * 3))
@@ -971,6 +971,7 @@ class MainWindow(QMainWindow):
             return
         if not hasattr(self, "user_activity_log_page"):
             self.setup_user_activity_log_page()
+        self.apply_appearance_settings()
         self.load_user_activity_log()
         self.show_page(self.user_activity_log_page)
 

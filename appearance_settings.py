@@ -1,7 +1,7 @@
-"""Per-user visual preferences for the PySide6 application.
+"""Global default and per-user visual preferences for the PySide6 application.
 
-Preferences are stored in Access by tbluser.userid, so a user's choices follow
-their application account rather than only the current Windows profile.
+The application defaults are stored separately from overrides belonging to each
+account, using tbluser.userid as the per-user key.
 """
 from copy import deepcopy
 
@@ -96,9 +96,185 @@ def _ensure_settings_table(connection, cursor):
         cursor.execute("SELECT TOP 1 [userid] FROM [tblUserAppearanceSettings]")
 
 
-def load_user_appearance_settings(userid):
-    """Load preferences keyed by tbluser.userid; use defaults on first login."""
+def _ensure_defaults_table(connection, cursor):
+    """Create the single-row application-defaults table when needed."""
+    try:
+        cursor.execute("SELECT TOP 1 [setting_id] FROM [tblAppAppearanceDefaults]")
+        return
+    except Exception:
+        pass
+
+    try:
+        cursor.execute("""
+            CREATE TABLE [tblAppAppearanceDefaults] (
+                [setting_id] LONG NOT NULL,
+                [theme] TEXT(12),
+                [font_family] TEXT(64),
+                [font_size] INTEGER,
+                [accent_color] TEXT(16),
+                [table_row_height] INTEGER,
+                [alternating_rows] BIT,
+                CONSTRAINT [PK_tblAppAppearanceDefaults] PRIMARY KEY ([setting_id])
+            )
+        """)
+        connection.commit()
+    except Exception:
+        cursor.execute("SELECT TOP 1 [setting_id] FROM [tblAppAppearanceDefaults]")
+
+
+def load_default_appearance_settings():
+    """Load the administrator-defined defaults; use built-in values on first run."""
     settings = deepcopy(DEFAULT_APPEARANCE_SETTINGS)
+    connection = None
+    cursor = None
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+        _ensure_defaults_table(connection, cursor)
+        cursor.execute("""
+            SELECT [theme], [font_family], [font_size], [accent_color],
+                   [table_row_height], [alternating_rows]
+            FROM [tblAppAppearanceDefaults]
+            WHERE [setting_id] = 1
+        """)
+        row = cursor.fetchone()
+        if row:
+            settings.update({
+                "theme": row[0] or settings["theme"],
+                "font_family": row[1] or settings["font_family"],
+                "font_size": row[2] if row[2] is not None else settings["font_size"],
+                "accent_color": row[3] or settings["accent_color"],
+                "table_row_height": row[4] if row[4] is not None else settings["table_row_height"],
+                "alternating_rows": row[5] if row[5] is not None else settings["alternating_rows"],
+            })
+        else:
+            cursor.execute("""
+                INSERT INTO [tblAppAppearanceDefaults]
+                ([setting_id], [theme], [font_family], [font_size], [accent_color],
+                 [table_row_height], [alternating_rows])
+                VALUES (1, ?, ?, ?, ?, ?, ?)
+            """, (
+                settings["theme"], settings["font_family"], settings["font_size"],
+                settings["accent_color"], settings["table_row_height"],
+                settings["alternating_rows"],
+            ))
+            connection.commit()
+    except Exception:
+        # The application must remain usable even if Access cannot store preferences.
+        pass
+    finally:
+        if cursor is not None:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+        if connection is not None:
+            try:
+                connection.close()
+            except Exception:
+                pass
+    return _clean_settings(settings)
+
+
+def save_default_appearance_settings(values):
+    """Save the defaults used by new/un-customized accounts."""
+    settings = _clean_settings(values)
+    connection = None
+    cursor = None
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+        _ensure_defaults_table(connection, cursor)
+        cursor.execute(
+            "SELECT [setting_id] FROM [tblAppAppearanceDefaults] WHERE [setting_id] = 1"
+        )
+        exists = cursor.fetchone() is not None
+        if exists:
+            cursor.execute("""
+                UPDATE [tblAppAppearanceDefaults]
+                SET [theme] = ?, [font_family] = ?, [font_size] = ?,
+                    [accent_color] = ?, [table_row_height] = ?,
+                    [alternating_rows] = ?
+                WHERE [setting_id] = 1
+            """, (
+                settings["theme"], settings["font_family"], settings["font_size"],
+                settings["accent_color"], settings["table_row_height"],
+                settings["alternating_rows"],
+            ))
+        else:
+            cursor.execute("""
+                INSERT INTO [tblAppAppearanceDefaults]
+                ([setting_id], [theme], [font_family], [font_size], [accent_color],
+                 [table_row_height], [alternating_rows])
+                VALUES (1, ?, ?, ?, ?, ?, ?)
+            """, (
+                settings["theme"], settings["font_family"], settings["font_size"],
+                settings["accent_color"], settings["table_row_height"],
+                settings["alternating_rows"],
+            ))
+        connection.commit()
+    except Exception:
+        if connection is not None:
+            try:
+                connection.rollback()
+            except Exception:
+                pass
+        raise
+    finally:
+        if cursor is not None:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+        if connection is not None:
+            try:
+                connection.close()
+            except Exception:
+                pass
+    return settings
+
+
+def reset_user_appearance_settings(userid):
+    """Remove a user's override so the account inherits current application defaults."""
+    try:
+        user_id = int(userid)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("شناسه کاربر معتبر نیست؛ تنظیمات بازنشانی نشد.") from exc
+
+    connection = None
+    cursor = None
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+        _ensure_settings_table(connection, cursor)
+        cursor.execute(
+            "DELETE FROM [tblUserAppearanceSettings] WHERE [userid] = ?",
+            (user_id,),
+        )
+        connection.commit()
+    except Exception:
+        if connection is not None:
+            try:
+                connection.rollback()
+            except Exception:
+                pass
+        raise
+    finally:
+        if cursor is not None:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+        if connection is not None:
+            try:
+                connection.close()
+            except Exception:
+                pass
+
+
+def load_user_appearance_settings(userid):
+    """Load personal overrides on top of the administrator-defined defaults."""
+    settings = load_default_appearance_settings()
     try:
         user_id = int(userid)
     except (TypeError, ValueError):
@@ -210,18 +386,28 @@ def save_user_appearance_settings(userid, values):
 class UserAppearanceDialog(QDialog):
     """Settings dialog. The parent window applies changes only after saving."""
 
-    def __init__(self, parent=None, settings=None):
+    def __init__(
+        self, parent=None, settings=None, *, title="تنظیمات ظاهری من",
+        intro_text=None, reset_settings=None, reset_means_inherit=False,
+        reset_button_text="بازگشت به پیش‌فرض",
+    ):
         super().__init__(parent)
-        self.setWindowTitle("تنظیمات ظاهری من")
+        self.setWindowTitle(title)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setMinimumWidth(430)
         self._settings = _clean_settings(settings)
+        self._reset_settings = _clean_settings(
+            reset_settings if reset_settings is not None else load_default_appearance_settings()
+        )
+        self._reset_means_inherit = bool(reset_means_inherit)
+        self.reset_to_inherit = False
 
         root = QVBoxLayout(self)
         root.setContentsMargins(18, 18, 18, 18)
         root.setSpacing(12)
 
         intro = QLabel(
+            intro_text or
             "این تنظیمات فقط برای حساب کاربری شما ذخیره می‌شود و روی ظاهر حساب‌های دیگر اثر ندارد."
         )
         intro.setWordWrap(True)
@@ -260,7 +446,7 @@ class UserAppearanceDialog(QDialog):
         form.addRow("", self.chkAlternatingRows)
 
         actions = QHBoxLayout()
-        self.btnDefaults = QPushButton("بازگشت به پیش‌فرض")
+        self.btnDefaults = QPushButton(reset_button_text)
         self.btnDefaults.clicked.connect(self.reset_defaults)
         actions.addWidget(self.btnDefaults)
         actions.addStretch(1)
@@ -287,9 +473,15 @@ class UserAppearanceDialog(QDialog):
             control_background = "#FFFFFF"
             dialog_border = "#C7D0DB"
         dialog_accent = self._settings["accent_color"]
+        dialog_font_family = self._settings["font_family"].replace('"', "")
+        dialog_font_size = self._settings["font_size"]
+        self.setFont(QFont(dialog_font_family, dialog_font_size))
         self.setStyleSheet(f"""
-            QDialog {{ background: {dialog_background}; color: {dialog_text}; }}
-            QLabel {{ color: {dialog_text}; }}
+            QDialog {{ background: {dialog_background}; color: {dialog_text}; font-family: "{dialog_font_family}"; font-size: {dialog_font_size}pt; }}
+            QLabel {{ color: {dialog_text}; font-family: "{dialog_font_family}"; font-size: {dialog_font_size}pt; }}
+            QComboBox, QSpinBox, QCheckBox, QPushButton, QDialogButtonBox {{
+                font-family: "{dialog_font_family}"; font-size: {dialog_font_size}pt;
+            }}
             QComboBox, QSpinBox {{
                 min-height: 30px; padding: 3px 6px;
                 background: {control_background}; color: {dialog_text};
@@ -304,6 +496,15 @@ class UserAppearanceDialog(QDialog):
             QPushButton:hover {{ border-color: {dialog_accent}; }}
         """)
         self._populate(self._settings)
+        self.cmbTheme.currentIndexChanged.connect(self._mark_custom_settings)
+        self.cmbFontFamily.currentIndexChanged.connect(self._mark_custom_settings)
+        self.spinFontSize.valueChanged.connect(self._mark_custom_settings)
+        self.cmbAccent.currentIndexChanged.connect(self._mark_custom_settings)
+        self.cmbRowHeight.currentIndexChanged.connect(self._mark_custom_settings)
+        self.chkAlternatingRows.toggled.connect(self._mark_custom_settings)
+
+    def _mark_custom_settings(self, *_):
+        self.reset_to_inherit = False
 
     def _populate(self, settings):
         index = self.cmbTheme.findData(settings["theme"])
@@ -318,7 +519,8 @@ class UserAppearanceDialog(QDialog):
         self.chkAlternatingRows.setChecked(settings["alternating_rows"])
 
     def reset_defaults(self):
-        self._populate(DEFAULT_APPEARANCE_SETTINGS)
+        self._populate(self._reset_settings)
+        self.reset_to_inherit = self._reset_means_inherit
 
     def selected_settings(self):
         return _clean_settings({
@@ -396,12 +598,18 @@ def appearance_stylesheet(settings):
         """
 
     font_qss = f"""
-        QWidget {{ font-family: "{font_family}"; }}
-        QLabel, QLineEdit, QComboBox, QSpinBox, QDateEdit, QPlainTextEdit, QTextEdit, QPushButton, QTableWidget {{
+        QWidget, QMenu, QMenuBar, QStatusBar {{
+            font-family: "{font_family}";
+        }}
+        QLabel, QLineEdit, QComboBox, QSpinBox, QDateEdit, QDateTimeEdit,
+        QPlainTextEdit, QTextEdit, QPushButton, QToolButton, QCheckBox,
+        QRadioButton, QTableWidget, QTableView, QTreeWidget, QTreeView,
+        QListWidget, QHeaderView::section, QMenuBar, QMenu, QStatusBar,
+        QComboBox QAbstractItemView {{
             font-family: "{font_family}"; font-size: {font_size}pt;
         }}
         QGroupBox {{ font-family: "{font_family}"; font-size: {header_size}pt; }}
-        QHeaderView::section {{ font-family: "{font_family}"; font-size: {font_size}pt; }}
         QTabBar::tab {{ font-family: "{font_family}"; font-size: {tab_size}pt; }}
+        QMenu::item {{ font-family: "{font_family}"; font-size: {font_size}pt; }}
     """
     return qss + font_qss

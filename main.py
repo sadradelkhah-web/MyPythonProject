@@ -3189,7 +3189,7 @@ class MainWindow(QMainWindow):
         except ImportError:
             QMessageBox.warning(
                 self, "خروجی Excel",
-                "کتابخانه openpyxl نصب نیست. در ترمینال محیط برنامه اجرا کنید:\\n"
+                "کتابخانه openpyxl نصب نیست. در ترمینال محیط برنامه اجرا کنید:\n"
                 "python -m pip install openpyxl"
             )
             return
@@ -3387,7 +3387,7 @@ class MainWindow(QMainWindow):
         except Exception as exc:
             QMessageBox.critical(
                 self, "ساخت فایل Excel ناموفق",
-                f"فایل گزارش ذخیره نشد:\\n{exc}"
+                f"فایل گزارش ذخیره نشد:\n{exc}"
             )
             return
         finally:
@@ -3399,7 +3399,7 @@ class MainWindow(QMainWindow):
 
         QMessageBox.information(
             self, "خروجی Excel",
-            f"گزارش با موفقیت ذخیره شد:\\n{path}\\n\\nتعداد سوابق خروجی: {len(records)}"
+            f"گزارش با موفقیت ذخیره شد:\n{path}\n\nتعداد سوابق خروجی: {len(records)}"
         )
 
     def _hotel_clear_form(self, *_args, keep_room=False):

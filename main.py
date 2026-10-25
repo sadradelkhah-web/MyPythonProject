@@ -866,7 +866,12 @@ class MainWindow(QMainWindow):
         if index < 0:
             title = self._main_tab_titles.get(page, page.objectName())
             index = self.tabMain.addTab(page, title)
+        was_current_page = self.tabMain.currentWidget() is page
         self.tabMain.setCurrentIndex(index)
+        # اگر همین تب اتاق‌داری دوباره از منو/نوار کناری باز شود نیز وضعیت تعمیرات تازه شود.
+        # هنگام تغییر از تب دیگر، این کار در _on_main_tab_changed انجام می‌شود.
+        if was_current_page and page is self.ui.tabHotel:
+            self._hotel_load_all()
 
     def open_page(self, page):
         """باز کردن تب موردنظر؛ تب‌های باز دیگر بسته نمی‌شوند."""
@@ -891,7 +896,7 @@ class MainWindow(QMainWindow):
         self.tabMain.setCurrentIndex(index)
 
     def _on_main_tab_changed(self, index):
-        """فقط مجوز تب انتخاب‌شده را بررسی می‌کند؛ تب قبلی بسته نمی‌شود."""
+        """مجوز تب انتخاب‌شده را بررسی می‌کند و هنگام ورود به اتاق‌داری، اطلاعات را تازه می‌کند."""
         if index < 0:
             return
         page = self.tabMain.widget(index)
@@ -899,6 +904,11 @@ class MainWindow(QMainWindow):
             return
         if not self._page_allowed(page):
             self.show_home()
+            return
+        # وضعیت «تخت تعمیر» باید از وضعیت فعلی tblkar خوانده شود؛ با پایان کار،
+        # کارت اتاق پس از بازگشت به این تب به رنگ عادی برمی‌گردد.
+        if page is self.ui.tabHotel and hasattr(self, "_hotel_load_all"):
+            self._hotel_load_all()
 
 
     def _preview_appearance_settings(self, settings):

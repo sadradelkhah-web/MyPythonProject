@@ -866,12 +866,7 @@ class MainWindow(QMainWindow):
         if index < 0:
             title = self._main_tab_titles.get(page, page.objectName())
             index = self.tabMain.addTab(page, title)
-        was_current_page = self.tabMain.currentWidget() is page
         self.tabMain.setCurrentIndex(index)
-        # اگر همین تب اتاق‌داری دوباره از منو/نوار کناری باز شود نیز وضعیت تعمیرات تازه شود.
-        # هنگام تغییر از تب دیگر، این کار در _on_main_tab_changed انجام می‌شود.
-        if was_current_page and page is self.ui.tabHotel:
-            self._hotel_load_all()
 
     def open_page(self, page):
         """باز کردن تب موردنظر؛ تب‌های باز دیگر بسته نمی‌شوند."""
@@ -896,7 +891,7 @@ class MainWindow(QMainWindow):
         self.tabMain.setCurrentIndex(index)
 
     def _on_main_tab_changed(self, index):
-        """مجوز تب انتخاب‌شده را بررسی می‌کند و هنگام ورود به اتاق‌داری، اطلاعات را تازه می‌کند."""
+        """فقط مجوز تب انتخاب‌شده را بررسی می‌کند؛ تب قبلی بسته نمی‌شود."""
         if index < 0:
             return
         page = self.tabMain.widget(index)
@@ -904,11 +899,6 @@ class MainWindow(QMainWindow):
             return
         if not self._page_allowed(page):
             self.show_home()
-            return
-        # وضعیت «تخت تعمیر» باید از وضعیت فعلی tblkar خوانده شود؛ با پایان کار،
-        # کارت اتاق پس از بازگشت به این تب به رنگ عادی برمی‌گردد.
-        if page is self.ui.tabHotel and hasattr(self, "_hotel_load_all"):
-            self._hotel_load_all()
 
 
     def _preview_appearance_settings(self, settings):
@@ -2208,8 +2198,6 @@ class MainWindow(QMainWindow):
         self._hotel_guest_schema = None
         self._hotel_rooms = []
         self._hotel_guests = []
-        self._hotel_open_repair_requests = []
-        self._hotel_maintenance_check_error = ""
         self._hotel_building_filter = ""
         self.ui.cmbHotelBuilding.clear()
         self.ui.cmbHotelBuilding.addItems(["لاله", "لیان"])
@@ -2676,83 +2664,6 @@ class MainWindow(QMainWindow):
         setattr(self, cache_attr, schema)
         return [dict(zip(schema, tuple(record))) for record in cursor.fetchall()]
 
-    def _hotel_query_open_repair_requests(self, cursor):
-        """درخواست‌های تعمیراتی پایان‌نیافته را از tblkar می‌خواند."""
-        cursor.execute("""
-            SELECT [wonumber], [mozooe], [mahalkara], [mahalkarf], [vaziyat], [payan]
-            FROM [tblkar]
-            WHERE ([payan] = False OR [payan] IS NULL)
-        """)
-        columns = [description[0] for description in cursor.description]
-        requests = [dict(zip(columns, tuple(record))) for record in cursor.fetchall()]
-        unfinished = []
-        for request in requests:
-            completed_col = self._hotel_pick(request, "payan")
-            status_col = self._hotel_pick(request, "vaziyat", "status")
-            if completed_col and self._hotel_bool(request.get(completed_col), default=False):
-                continue
-            status = normalize_status(request.get(status_col)) if status_col else ""
-            if status.casefold().replace(" ", "") in ("پایان", "تکمیلشده"):
-                continue
-            unfinished.append(request)
-        return unfinished
-
-    def _hotel_repair_location_matches_room(self, location_value, building, room):
-        """تطبیق دقیق کد ساختمان و اتاق از متن محل کار."""
-        raw = normalize_digits(self._hotel_text(location_value)).strip().casefold()
-        raw = raw.replace("ي", "ی").replace("ك", "ک")
-        if not raw:
-            return False
-
-        tokens = set(re.findall(r"[a-z0-9]+|[آ-ی]+", raw))
-        compact = self._hotel_room_key(raw)
-        room_key = self._hotel_room_key(room)
-        if not room_key:
-            return False
-
-        normalized_building = self._hotel_building_name({"build": building})
-        if normalized_building == "لاله":
-            building_keys = ("لاله", "laleh")
-        elif normalized_building == "لیان":
-            building_keys = ("لیان", "lian")
-        else:
-            building_keys = (normalized_building,)
-
-        building_tokens = tuple(self._hotel_room_key(value) for value in building_keys)
-        if not any(key and (key in tokens or key in compact) for key in building_tokens):
-            return False
-
-        # توکن کامل اتاق بررسی می‌شود تا کد A1 با A10 یا 1 با 101 اشتباه نشود.
-        if room_key in tokens:
-            return True
-
-        # پشتیبانی از قالب‌هایی مثل «ساختمان لاله، اتاق A-1»؛
-        # کد ساختمان ممکن است پس از یک عنوان متنی آمده باشد.
-        for key in building_tokens:
-            if not key:
-                continue
-            building_index = compact.find(key)
-            if building_index < 0:
-                continue
-            remainder = compact[building_index + len(key):]
-            if remainder.startswith(room_key):
-                return True
-
-        return False
-
-    def _hotel_room_repair_requests(self, building, room):
-        """درخواست‌های باز مرتبط با یک اتاق را در هر دو فیلد محل کار جست‌وجو می‌کند."""
-        matches = []
-        for request in getattr(self, "_hotel_open_repair_requests", []):
-            for alias in ("mahalkara", "mahalkarf"):
-                column = self._hotel_pick(request, alias)
-                if column and self._hotel_repair_location_matches_room(
-                    request.get(column), building, room
-                ):
-                    matches.append(request)
-                    break
-        return matches
-
     def _hotel_room_defaults(self):
         rooms = []
         for section in "ABCDEF":
@@ -2850,14 +2761,6 @@ class MainWindow(QMainWindow):
                 cur = conn.cursor()
                 room_rows = self._hotel_read_rows(cur, "tblMehmansera", "_hotel_room_schema")
                 guest_rows = self._hotel_read_rows(cur, "tblHotel", "_hotel_guest_schema")
-                try:
-                    self._hotel_open_repair_requests = self._hotel_query_open_repair_requests(cur)
-                    self._hotel_maintenance_check_error = ""
-                except Exception as repair_exc:
-                    # کارت‌ها و سوابق هتل همچنان بارگذاری می‌شوند؛ اما ثبت پذیرش جدید
-                    # در صورت نامشخص بودن وضعیت تعمیرات، بعداً متوقف می‌شود.
-                    self._hotel_open_repair_requests = []
-                    self._hotel_maintenance_check_error = str(repair_exc)
             finally:
                 conn.close()
             # همیشه موجودی کامل شناخته‌شده نمایش داده شود؛ حتی اگر برای بعضی اتاق‌ها
@@ -2997,101 +2900,6 @@ class MainWindow(QMainWindow):
         except (TypeError, ValueError):
             return 3
 
-
-    def _hotel_location_matches_room(self, location, building, room):
-        """تشخیص محل اتاق در هر یک از دو فیلد محل درخواست، با تطبیق ساختمان و کد اتاق."""
-        raw = normalize_digits(str(location or "")).strip().casefold()
-        if not raw:
-            return False
-        raw = raw.replace("ي", "ی").replace("ك", "ک")
-
-        detected_building = None
-        if re.search(r"لاله|laleh", raw, re.IGNORECASE):
-            detected_building = "لاله"
-        elif re.search(r"لیان|lian", raw, re.IGNORECASE):
-            detected_building = "لیان"
-
-        # اگر ساختمان داخل محل ذکر شده باشد، درخواست فقط برای همان ساختمان است.
-        if detected_building and not self._hotel_same_building(detected_building, building):
-            return False
-
-        room_part = raw
-        for token in (
-            "ساختمان", "مهمانسرا", "لاله", "laleh", "لیان", "lian",
-            "اتاق", "شماره", "سوئیت", "سویت", "سوئيت", "suite", "room"
-        ):
-            room_part = re.sub(re.escape(token), "", room_part, flags=re.IGNORECASE)
-        location_room_key = self._hotel_room_key(room_part)
-        target_room_key = self._hotel_room_key(room)
-        if not location_room_key or not target_room_key or location_room_key != target_room_key:
-            return False
-
-        # اگر در محل ثبت‌شده نام ساختمان نیامده باشد، فقط وقتی اتاق در موجودی
-        # میان ساختمان‌ها یکتا است به‌عنوان تطبیق پذیرفته می‌شود.
-        if not detected_building:
-            room_buildings = {
-                self._hotel_norm(self._hotel_building_name(item))
-                for item in self._hotel_rooms
-                if self._hotel_same_room(self._hotel_room_name(item), room)
-                and self._hotel_building_name(item)
-            }
-            if len(room_buildings) > 1:
-                return False
-        return True
-
-    def _hotel_unfinished_repairs(self, building, room, cursor=None):
-        """درخواست‌های تعمیر پایان‌نیافته مربوط به اتاق را از هر دو فیلد محل می‌خواند."""
-        own_connection = cursor is None
-        conn = None
-        try:
-            if own_connection:
-                conn = get_connection()
-                cursor = conn.cursor()
-            cursor.execute("""
-                SELECT [wonumber], [mozooe], [mahalkara], [mahalkarf], [vaziyat], [payan]
-                FROM [tblkar]
-            """)
-            conflicts = []
-            for row in cursor.fetchall():
-                status = normalize_status(row[4] if len(row) > 4 else "")
-                finished = self._hotel_bool(row[5] if len(row) > 5 else False) or status.casefold().replace(" ", "") in ("پایان", "تکمیلشده")
-                if finished:
-                    continue
-                location_a = row[2] if len(row) > 2 else ""
-                location_f = row[3] if len(row) > 3 else ""
-                if (
-                    self._hotel_location_matches_room(location_a, building, room)
-                    or self._hotel_location_matches_room(location_f, building, room)
-                ):
-                    conflicts.append({
-                        "number": self._hotel_text(row[0] if len(row) > 0 else ""),
-                        "topic": self._hotel_text(row[1] if len(row) > 1 else ""),
-                        "status": status or "ثبت نشده",
-                        "location": self._hotel_text(location_a or location_f),
-                    })
-            return conflicts
-        finally:
-            if own_connection and conn is not None:
-                try:
-                    conn.close()
-                except Exception:
-                    pass
-
-    def _hotel_repair_block_message(self, building, room, conflicts):
-        lines = [
-            f"هشدار: اتاق «{room}» در ساختمان «{building}» تحت تعمیر است.",
-            "برای این اتاق درخواست تعمیر پایان‌نیافته ثبت شده است:"
-        ]
-        for item in conflicts[:8]:
-            number = item.get("number") or "بدون شماره"
-            topic = item.get("topic") or "بدون موضوع"
-            status = item.get("status") or "ثبت نشده"
-            lines.append(f"• درخواست {number}؛ {topic}؛ وضعیت: {status}")
-        if len(conflicts) > 8:
-            lines.append(f"و {len(conflicts) - 8} درخواست دیگر.")
-        lines.append("آیا با اطلاع از وضعیت تعمیر، پذیرش مهمان در این اتاق را ادامه می‌دهید؟")
-        return "\n".join(lines)
-
     def _hotel_room_occupied_people(self, building, room, arrival=None, departure=None, exclude_id=None):
         """جمع افراد گروه‌هایی که تاریخ اقامتشان با بازه موردنظر هم‌پوشانی دارد."""
         new_start = self._hotel_date_db(arrival) if arrival else self._hotel_date_db(self._hotel_today_jalali())
@@ -3179,8 +2987,6 @@ class MainWindow(QMainWindow):
             active = self._hotel_text(room_row.get(status_col)) if status_col else "فعال"
             empty_col = self._hotel_pick(room_row, "empty")
             empty_value = self._hotel_bool(room_row.get(empty_col), default=True) if empty_col else True
-            repair_requests = self._hotel_room_repair_requests(building, room)
-            under_repair = bool(repair_requests)
             current_groups = self._hotel_current_guests(building, room)
             guest = current_groups[0] if current_groups else None
             reservation = None
@@ -3269,34 +3075,14 @@ class MainWindow(QMainWindow):
             guest_name = "، ".join(guest_names) if guest_names else " ".join(x for x in (self._hotel_text(display_guest.get(name_col)) if display_guest and name_col else "", self._hotel_text(display_guest.get(family_col)) if display_guest and family_col else "") if x)
             capacity_count = self._hotel_room_capacity(room_row)
             people_display = f"{total_people} از {capacity_count} نفر" if current_groups else (self._hotel_text(display_guest.get(people_col)) if display_guest and people_col else "")
-            repair_numbers = [
-                self._hotel_text(request.get(self._hotel_pick(request, "wonumber")))
-                for request in repair_requests
-            ]
-            repair_numbers = [number for number in repair_numbers if number]
-            repair_number_text = "، ".join(repair_numbers[:3])
-            if len(repair_numbers) > 3:
-                repair_number_text += "، ..."
-
-            # شماره درخواست تعمیر باید روی خود کارت و در جدول دیده شود؛ Tooltip به‌تنهایی کافی نیست.
-            status_display = (
-                f"تخت تعمیر - شماره درخواست: {repair_number_text or 'نامشخص'}"
-                if under_repair else status
-            )
-            values = [building, room, status_display, guest_name, people_display, actual_in or planned_in, planned_out, ""]
+            values = [building, room, status, guest_name, people_display, actual_in or planned_in, planned_out, ""]
             row_idx = table.rowCount()
             table.insertRow(row_idx)
             for col_idx, value in enumerate(values):
-                item = QTableWidgetItem(format_numeric_display(value))
-                if under_repair:
-                    item.setBackground(QColor("#FFF2B2"))
-                    item.setForeground(QColor("#654D00"))
-                table.setItem(row_idx, col_idx, item)
+                table.setItem(row_idx, col_idx, QTableWidgetItem(format_numeric_display(value)))
             table.item(row_idx, 0).setData(Qt.ItemDataRole.UserRole, room_row.get(self._hotel_pick(room_row, "ID", "id")))
             if grid:
-                if under_repair:
-                    bg, border, accent = "#FFF2B2", "#D8A900", "#654D00"
-                elif status == "خالی":
+                if status == "خالی":
                     bg, border, accent = "#F0F9F3", "#8CC9A0", "#21864B"
                 elif status == "اشغال":
                     bg, border, accent = "#FFF3F1", "#E6A39B", "#B9382B"
@@ -3310,27 +3096,15 @@ class MainWindow(QMainWindow):
                 shown_in = actual_in or planned_in
                 shown_out = actual_out or planned_out
                 date_line = f"\nورود {shown_in}   |   خروج {shown_out}" if shown_in or shown_out else ""
-                repair_line = (
-                    "\n🟨 تخت تعمیر"
-                    f"\nشماره درخواست: {repair_number_text or 'نامشخص'}"
-                    if under_repair else ""
-                )
-                card_text = f"{room}  ·  {building}\n●  {status}{repair_line}\n{guest_line}\n{people_line}{date_line}"
+                card_text = f"{room}  ·  {building}\n●  {status}\n{guest_line}\n{people_line}{date_line}"
                 card = HotelRoomCardButton(card_text, self.hotelRoomCardsHost)
                 card.setObjectName("hotelRoomCardButton")
-                card.setMinimumSize(155, 158)
+                card.setMinimumSize(155, 128)
                 card.setMaximumWidth(280)
                 card.setCursor(Qt.CursorShape.PointingHandCursor)
                 card.setStyleSheet(f"QPushButton#hotelRoomCardButton {{ text-align:center; white-space:pre-wrap; background:{bg}; border:1px solid {border}; border-radius:10px; padding:9px; color:{accent}; font-size:11pt; font-weight:bold; }} QPushButton#hotelRoomCardButton:hover {{ border:2px solid {accent}; }}")
                 card.clicked.connect(lambda checked=False, b=building, r=room: self._hotel_open_room_for_reception(b, r))
-                if under_repair:
-                    card.setToolTip(
-                        "هشدار: این اتاق درخواست تعمیر پایان‌نیافته دارد. "
-                        f"شماره درخواست‌ها: {repair_number_text or 'نامشخص'}\n"
-                        "برای پذیرش کلیک کنید؛ برای تغییر ظرفیت دوبار کلیک کنید."
-                    )
-                else:
-                    card.setToolTip("برای پذیرش کلیک کنید؛ برای تغییر ظرفیت دوبار کلیک کنید.")
+                card.setToolTip("برای پذیرش کلیک کنید؛ برای تغییر ظرفیت دوبار کلیک کنید.")
                 card.doubleClicked.connect(lambda b=building, r=room: self._hotel_edit_room_capacity(b, r))
                 cols = 5 if self.ui.tabHotel.width() > 1100 else 4
                 grid.addWidget(card, card_index // cols, card_index % cols)
@@ -3911,73 +3685,6 @@ class MainWindow(QMainWindow):
         # جلوی ثبت اقامت بدون نام اتاق گرفته شود.
         if not first or not family or not room:
             QMessageBox.warning(self,"ثبت اقامت","نام، نام خانوادگی و اتاق را مشخص کنید."); return
-
-        # وضعیت تعمیرات را هنگام ذخیره دوباره از دیتابیس می‌خوانیم؛
-        # اگر امکان بررسی نباشد، پذیرش جدید بدون آگاهی کاربر انجام نمی‌شود.
-        check_conn = None
-        check_cursor = None
-        try:
-            check_conn = get_connection()
-            check_cursor = check_conn.cursor()
-            self._hotel_open_repair_requests = self._hotel_query_open_repair_requests(check_cursor)
-            self._hotel_maintenance_check_error = ""
-        except Exception as repair_exc:
-            QMessageBox.warning(
-                self, "بررسی وضعیت تعمیرات",
-                "وضعیت تعمیرات اتاق قابل بررسی نیست؛ برای جلوگیری از پذیرش بدون اطلاع، "
-                f"ثبت مهمان انجام نشد.\n\nجزئیات: {repair_exc}"
-            )
-            return
-        finally:
-            if check_cursor is not None:
-                try:
-                    check_cursor.close()
-                except Exception:
-                    pass
-            if check_conn is not None:
-                try:
-                    check_conn.close()
-                except Exception:
-                    pass
-
-        repair_requests = self._hotel_room_repair_requests(building, room)
-        if repair_requests:
-            details = []
-            for request in repair_requests[:5]:
-                number_col = self._hotel_pick(request, "wonumber")
-                topic_col = self._hotel_pick(request, "mozooe")
-                number = self._hotel_text(request.get(number_col)) if number_col else ""
-                topic = self._hotel_text(request.get(topic_col)) if topic_col else ""
-                places = []
-                for alias in ("mahalkara", "mahalkarf"):
-                    place_col = self._hotel_pick(request, alias)
-                    if place_col and self._hotel_repair_location_matches_room(
-                        request.get(place_col), building, room
-                    ):
-                        place = self._hotel_text(request.get(place_col))
-                        if place and place not in places:
-                            places.append(place)
-                line = "درخواست " + (number or "بدون شماره")
-                if topic:
-                    line += f"؛ موضوع: {topic}"
-                if places:
-                    line += f"؛ محل: {' / '.join(places)}"
-                details.append(line)
-            details_text = "\n".join(details)
-            if len(repair_requests) > 5:
-                details_text += f"\nو {len(repair_requests) - 5} درخواست تعمیر دیگر"
-            answer = QMessageBox.warning(
-                self,
-                "هشدار: اتاق تحت تعمیر است",
-                f"برای ساختمان {building}، اتاق {room} درخواست تعمیر پایان‌نیافته وجود دارد.\n\n"
-                f"{details_text}\n\n"
-                "آیا با اطلاع از تحت تعمیر بودن اتاق، از پذیرش مهمان اطمینان دارید؟",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
-            if answer != QMessageBox.StandardButton.Yes:
-                return
-
         room_row = next((r for r in self._hotel_rooms if self._hotel_building_name(r) == building and self._hotel_same_room(self._hotel_room_name(r), room)), None)
         capacity = self._hotel_room_capacity(room_row or {"Capacity": 3})
         arrival=self._hotel_date_db(self.ui.txtHotelArrival.text())
@@ -3994,8 +3701,6 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self,"تاریخ نامعتبر","تاریخ خروج واقعی را به شکل شمسی ۸ رقمی وارد کنید."); return
         if actual_arrival and actual_departure and actual_departure < actual_arrival:
             QMessageBox.warning(self,"تاریخ نامعتبر","تاریخ خروج واقعی نمی‌تواند قبل از ورود واقعی باشد."); return
-        # وضعیت تعمیرات در ابتدای همین عملیات از tblkar تازه‌خوانی شده و در صورت وجود
-        # تعمیر فعال، کاربر با هشدار Yes/No تصمیم گرفته است؛ نباید تأیید او دوباره مسدود شود.
         try:
             people_count = max(1, int(self.ui.txtHotelPeople.text().strip() or "1"))
         except ValueError:
@@ -4140,40 +3845,6 @@ class MainWindow(QMainWindow):
         if occupied_people + people_count > capacity:
             QMessageBox.warning(self, "ظرفیت اتاق", f"ظرفیت این اتاق {capacity} نفر است؛ در این بازه {occupied_people} نفر ثبت شده‌اند و این گروه {people_count} نفر است.")
             return
-
-        # اگر ویرایش باعث ثبت ورود واقعی جدید یا انتقال مهمان پذیرش‌شده به اتاق دیگری شود،
-        # همان قانون تعمیرات باید اجرا شود؛ ویرایش عادی مهمان حاضر مسدود نمی‌شود.
-        old_guest = next(
-            (r for r in self._hotel_guests
-             if str(r.get(self._hotel_pick(r, "ID", "id"))) == str(guest_id)),
-            None,
-        )
-        old_in_col = self._hotel_pick(old_guest or {}, "TarikhIn", "actualcheckin")
-        old_has_actual_in = bool(old_guest and old_in_col and old_guest.get(old_in_col))
-        room_changed = (
-            old_guest is None
-            or not self._hotel_same_building(self._hotel_building_name(old_guest), building)
-            or not self._hotel_same_room(self._hotel_guest_room(old_guest), room)
-        )
-        if actual_arrival and not actual_departure and (not old_has_actual_in or room_changed):
-            try:
-                repair_conflicts = self._hotel_unfinished_repairs(building, room)
-            except Exception as exc:
-                QMessageBox.critical(
-                    self, "بررسی تعمیرات ناموفق",
-                    f"به دلیل خطا در بررسی درخواست‌های تعمیر، پذیرش/انتقال انجام نشد.\n{exc}"
-                )
-                return
-            if repair_conflicts:
-                answer = QMessageBox.question(
-                    self,
-                    "هشدار: اتاق تحت تعمیر است",
-                    self._hotel_repair_block_message(building, room, repair_conflicts),
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No,
-                )
-                if answer != QMessageBox.StandardButton.Yes:
-                    return
 
         conn = cursor = None
         try:
@@ -4485,21 +4156,6 @@ class MainWindow(QMainWindow):
                 selected = next((r for r in self._hotel_guests if str(r.get(self._hotel_pick(r,"ID","id"))) == str(rid)), None)
                 if selected is None:
                     raise RuntimeError("رکورد مهمان در سوابق پیدا نشد؛ فهرست را تازه‌سازی کنید.")
-                building = self._hotel_building_name(selected)
-                room = self._hotel_guest_room(selected)
-                if action == "checkin":
-                    repair_conflicts = self._hotel_unfinished_repairs(building, room, cursor=cur)
-                    if repair_conflicts:
-                        answer = QMessageBox.question(
-                            self,
-                            "هشدار: اتاق تحت تعمیر است",
-                            self._hotel_repair_block_message(building, room, repair_conflicts),
-                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                            QMessageBox.StandardButton.No,
-                        )
-                        if answer != QMessageBox.StandardButton.Yes:
-                            conn.rollback()
-                            return
                 in_col = self._hotel_pick(selected, "TarikhIn", "actualcheckin")
                 out_col = self._hotel_pick(selected, "tarikhOut", "actualcheckout")
                 already_in = bool(in_col and selected.get(in_col))
@@ -7454,8 +7110,6 @@ class MainWindow(QMainWindow):
         self.ui.txtTrackingNote.clear()
         self.ui.txtTrackingDate.setText(jdatetime.date.today().strftime("%Y/%m/%d"))
         self.load_report_data()
-        # با پایان تعمیر، کارت اتاق از حالت زرد خارج شود و وضعیت عادی دوباره نمایش داده شود.
-        self._hotel_load_all()
 
     def view_tracking_history(self):
         wonumber = self.ui.lblSelectedWorkNo.text().strip()

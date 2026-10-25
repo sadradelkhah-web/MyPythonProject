@@ -826,7 +826,12 @@ def appearance_stylesheet(settings):
             background-color: {menu_background};
             color: {menu_text};
         }}
-        QMenuBar::item:selected, QMenu::item:selected {{
+        QFrame#navigationPanel QPushButton {{
+            background-color: {menu_background};
+            color: {menu_text};
+        }}
+        QMenuBar::item:selected, QMenu::item:selected,
+        QFrame#navigationPanel QPushButton:hover {{
             background-color: {accent};
             color: #FFFFFF;
         }}

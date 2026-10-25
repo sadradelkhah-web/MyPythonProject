@@ -901,15 +901,29 @@ class MainWindow(QMainWindow):
             self.show_home()
 
 
+    def _preview_appearance_settings(self, settings):
+        """اعمال موقت تنظیمات انتخاب‌شده؛ ذخیره در پایگاه داده انجام نمی‌شود."""
+        self.appearance_settings = dict(settings or {})
+        self.apply_appearance_settings()
+
+    def _restore_appearance_settings(self, settings):
+        """بازگرداندن ظاهر فعال پیش از شروع پیش‌نمایش."""
+        self.appearance_settings = dict(settings or {})
+        self.apply_appearance_settings()
+
     def open_appearance_settings(self):
-        """نمایش تنظیمات شخصی؛ بازنشانی، حساب را به پیش‌فرض جاری متصل می‌کند."""
+        """تنظیمات شخصی با پیش‌نمایش موقت، ذخیره نهایی یا انصراف."""
+        original_settings = dict(self.appearance_settings)
         dialog = UserAppearanceDialog(
             self,
-            self.appearance_settings,
+            original_settings,
             reset_settings=load_default_appearance_settings(),
             reset_means_inherit=True,
         )
+        dialog.previewRequested.connect(self._preview_appearance_settings)
+
         if dialog.exec() != QDialog.DialogCode.Accepted:
+            self._restore_appearance_settings(original_settings)
             return
 
         try:
@@ -926,9 +940,10 @@ class MainWindow(QMainWindow):
             selected = dialog.selected_settings()
             save_user_appearance_settings(self.user.get("userid"), selected)
         except Exception as exc:
+            self._restore_appearance_settings(original_settings)
             QMessageBox.critical(
                 self, "ذخیره تنظیمات ناموفق",
-                f"تنظیمات ظاهری ذخیره نشدند:\n{exc}"
+                f"تنظیمات ظاهری ذخیره نشدند؛ ظاهر قبلی بازگردانده شد:\n{exc}"
             )
             return
 
@@ -948,6 +963,7 @@ class MainWindow(QMainWindow):
             )
             return
 
+        original_settings = dict(self.appearance_settings)
         dialog = UserAppearanceDialog(
             self,
             load_default_appearance_settings(),
@@ -955,13 +971,17 @@ class MainWindow(QMainWindow):
             intro_text=(
                 "این مقادیر برای حساب‌های جدید یا حساب‌هایی که تنظیمات شخصی‌شان را "
                 "به پیش‌فرض برمی‌گردانند استفاده می‌شود. تنظیمات شخصی ذخیره‌شده "
-                "کاربران دیگر تغییر نمی‌کند."
+                "کاربران دیگر تغییر نمی‌کند. برای دیدن نتیجه، «اعمال آزمایشی» را بزنید؛ "
+                "«ذخیره» تغییرات را ثبت و «انصراف» ظاهر فعلی را برمی‌گرداند."
             ),
             reset_settings=DEFAULT_APPEARANCE_SETTINGS,
             reset_means_inherit=False,
             reset_button_text="بازگشت به پیش‌فرض اولیه",
         )
+        dialog.previewRequested.connect(self._preview_appearance_settings)
+
         if dialog.exec() != QDialog.DialogCode.Accepted:
+            self._restore_appearance_settings(original_settings)
             return
 
         try:
@@ -969,9 +989,10 @@ class MainWindow(QMainWindow):
             self.appearance_settings = load_user_appearance_settings(self.user.get("userid"))
             self.apply_appearance_settings()
         except Exception as exc:
+            self._restore_appearance_settings(original_settings)
             QMessageBox.critical(
                 self, "ذخیره پیش‌فرض‌ها ناموفق",
-                f"تنظیمات پیش‌فرض ذخیره نشدند:\n{exc}"
+                f"تنظیمات پیش‌فرض ذخیره نشدند؛ ظاهر قبلی بازگردانده شد:\n{exc}"
             )
             return
 

@@ -6,7 +6,7 @@ account, using tbluser.userid as the per-user key.
 from copy import deepcopy
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -42,15 +42,52 @@ ACCENT_OPTIONS = [
 ]
 
 
+def installed_font_families():
+    """Return the font families available to Qt on this computer."""
+    try:
+        families = QFontDatabase().families()
+    except Exception:
+        families = []
+
+    # Keep the actual names returned by Windows/Qt, while removing duplicates.
+    unique = {}
+    for family in families:
+        name = str(family).strip()
+        if name:
+            unique.setdefault(name.casefold(), name)
+
+    result = sorted(unique.values(), key=str.casefold)
+    if result:
+        return result
+
+    # Safe fallback for unusual environments where Qt cannot enumerate fonts.
+    return ["Arial", "B Nazanin", "Calibri", "Segoe UI", "Tahoma"]
+
+
+def _default_available_font(families=None):
+    families = list(families or installed_font_families())
+    by_casefold = {name.casefold(): name for name in families}
+    for preferred in ("B Nazanin", "Tahoma", "Segoe UI", "Arial", "Calibri"):
+        if preferred.casefold() in by_casefold:
+            return by_casefold[preferred.casefold()]
+    return families[0] if families else "Sans Serif"
+
+
 def _clean_settings(values=None):
     settings = deepcopy(DEFAULT_APPEARANCE_SETTINGS)
     if isinstance(values, dict):
         settings.update(values)
     if settings.get("theme") not in ("light", "dark"):
         settings["theme"] = "light"
-    allowed_fonts = ("B Nazanin", "Tahoma", "Segoe UI", "Arial", "Calibri")
-    if settings.get("font_family") not in allowed_fonts:
-        settings["font_family"] = DEFAULT_APPEARANCE_SETTINGS["font_family"]
+    available_fonts = installed_font_families()
+    available_by_casefold = {name.casefold(): name for name in available_fonts}
+    requested_font = str(settings.get("font_family") or "").strip()
+    if requested_font.casefold() in available_by_casefold:
+        # Use the canonical family spelling reported by this computer.
+        settings["font_family"] = available_by_casefold[requested_font.casefold()]
+    else:
+        # A font chosen on another computer may not be installed here.
+        settings["font_family"] = _default_available_font(available_fonts)
     try:
         settings["font_size"] = max(9, min(16, int(settings["font_size"])))
     except (TypeError, ValueError):
@@ -425,8 +462,9 @@ class UserAppearanceDialog(QDialog):
         form.addRow("پوسته برنامه:", self.cmbTheme)
 
         self.cmbFontFamily = QComboBox(self)
-        self.cmbFontFamily.addItems(["B Nazanin", "Tahoma", "Segoe UI", "Arial", "Calibri"])
-        form.addRow("نوع قلم:", self.cmbFontFamily)
+        # The list is generated on each computer from its locally installed fonts.
+        self.cmbFontFamily.addItems(installed_font_families())
+        form.addRow("نوع قلم (فونت‌های نصب‌شده):", self.cmbFontFamily)
 
         self.spinFontSize = QSpinBox(self)
         self.spinFontSize.setRange(9, 16)

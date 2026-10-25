@@ -28,6 +28,11 @@ DEFAULT_APPEARANCE_SETTINGS = {
     "theme": "light",
     "font_family": "B Nazanin",
     "font_size": 11,
+    "button_font_family": "B Nazanin",
+    "button_font_size": 11,
+    "table_font_size": 10,
+    "menu_background_color": "#245B87",
+    "menu_text_color": "#FFFFFF",
     "accent_color": "#1976D2",
     "table_row_height": 34,
     "alternating_rows": True,
@@ -39,6 +44,24 @@ ACCENT_OPTIONS = [
     ("بنفش", "#6A1B9A"),
     ("فیروزه‌ای", "#00838F"),
     ("نارنجی", "#EF6C00"),
+]
+
+MENU_BACKGROUND_OPTIONS = [
+    ("آبی سازمانی", "#245B87"),
+    ("سرمه‌ای", "#1E293B"),
+    ("سبز", "#2E7D32"),
+    ("بنفش", "#6A1B9A"),
+    ("فیروزه‌ای", "#00838F"),
+    ("نارنجی", "#EF6C00"),
+    ("خاکستری روشن", "#EAF0F6"),
+    ("سفید", "#FFFFFF"),
+    ("ذغالی", "#20252D"),
+]
+
+MENU_TEXT_OPTIONS = [
+    ("سفید", "#FFFFFF"),
+    ("ذغالی", "#263445"),
+    ("مشکی", "#000000"),
 ]
 
 
@@ -92,9 +115,30 @@ def _clean_settings(values=None):
         settings["font_size"] = max(9, min(16, int(settings["font_size"])))
     except (TypeError, ValueError):
         settings["font_size"] = DEFAULT_APPEARANCE_SETTINGS["font_size"]
+    for key in ("button_font_family",):
+        requested = str(settings.get(key) or settings.get("font_family") or "").strip()
+        if requested.casefold() in available_by_casefold:
+            settings[key] = available_by_casefold[requested.casefold()]
+        else:
+            settings[key] = _default_available_font(available_fonts)
+
+    for key, default_value in (("button_font_size", 11), ("table_font_size", 10)):
+        try:
+            settings[key] = max(8, min(20, int(settings.get(key, default_value))))
+        except (TypeError, ValueError):
+            settings[key] = default_value
+
     valid_colors = {color for _, color in ACCENT_OPTIONS}
     if settings.get("accent_color") not in valid_colors:
         settings["accent_color"] = DEFAULT_APPEARANCE_SETTINGS["accent_color"]
+
+    menu_backgrounds = {color for _, color in MENU_BACKGROUND_OPTIONS}
+    if settings.get("menu_background_color") not in menu_backgrounds:
+        settings["menu_background_color"] = DEFAULT_APPEARANCE_SETTINGS["menu_background_color"]
+    menu_text_colors = {color for _, color in MENU_TEXT_OPTIONS}
+    if settings.get("menu_text_color") not in menu_text_colors:
+        settings["menu_text_color"] = DEFAULT_APPEARANCE_SETTINGS["menu_text_color"]
+
     try:
         settings["table_row_height"] = int(settings["table_row_height"])
     except (TypeError, ValueError):
@@ -105,10 +149,33 @@ def _clean_settings(values=None):
     return settings
 
 
+def _ensure_optional_columns(connection, cursor, table_name):
+    """Add appearance options to existing Access tables without losing saved settings."""
+    columns = {
+        "button_font_family": "TEXT(64)",
+        "button_font_size": "INTEGER",
+        "table_font_size": "INTEGER",
+        "menu_background_color": "TEXT(16)",
+        "menu_text_color": "TEXT(16)",
+    }
+    changed = False
+    for column_name, column_type in columns.items():
+        try:
+            cursor.execute(f"SELECT [{column_name}] FROM [{table_name}] WHERE 1 = 0")
+        except Exception:
+            cursor.execute(
+                f"ALTER TABLE [{table_name}] ADD COLUMN [{column_name}] {column_type}"
+            )
+            changed = True
+    if changed:
+        connection.commit()
+
+
 def _ensure_settings_table(connection, cursor):
-    """Create the preferences table when upgrading an existing Access database."""
+    """Create the preferences table and migrate it if it already exists."""
     try:
         cursor.execute("SELECT TOP 1 [userid] FROM [tblUserAppearanceSettings]")
+        _ensure_optional_columns(connection, cursor, "tblUserAppearanceSettings")
         return
     except Exception:
         pass
@@ -120,6 +187,11 @@ def _ensure_settings_table(connection, cursor):
                 [theme] TEXT(12),
                 [font_family] TEXT(64),
                 [font_size] INTEGER,
+                [button_font_family] TEXT(64),
+                [button_font_size] INTEGER,
+                [table_font_size] INTEGER,
+                [menu_background_color] TEXT(16),
+                [menu_text_color] TEXT(16),
                 [accent_color] TEXT(16),
                 [table_row_height] INTEGER,
                 [alternating_rows] BIT,
@@ -134,9 +206,10 @@ def _ensure_settings_table(connection, cursor):
 
 
 def _ensure_defaults_table(connection, cursor):
-    """Create the single-row application-defaults table when needed."""
+    """Create the default-settings table and migrate it if it already exists."""
     try:
         cursor.execute("SELECT TOP 1 [setting_id] FROM [tblAppAppearanceDefaults]")
+        _ensure_optional_columns(connection, cursor, "tblAppAppearanceDefaults")
         return
     except Exception:
         pass
@@ -148,6 +221,11 @@ def _ensure_defaults_table(connection, cursor):
                 [theme] TEXT(12),
                 [font_family] TEXT(64),
                 [font_size] INTEGER,
+                [button_font_family] TEXT(64),
+                [button_font_size] INTEGER,
+                [table_font_size] INTEGER,
+                [menu_background_color] TEXT(16),
+                [menu_text_color] TEXT(16),
                 [accent_color] TEXT(16),
                 [table_row_height] INTEGER,
                 [alternating_rows] BIT,
@@ -169,8 +247,9 @@ def load_default_appearance_settings():
         cursor = connection.cursor()
         _ensure_defaults_table(connection, cursor)
         cursor.execute("""
-            SELECT [theme], [font_family], [font_size], [accent_color],
-                   [table_row_height], [alternating_rows]
+            SELECT [theme], [font_family], [font_size], [button_font_family],
+                   [button_font_size], [table_font_size], [menu_background_color],
+                   [menu_text_color], [accent_color], [table_row_height], [alternating_rows]
             FROM [tblAppAppearanceDefaults]
             WHERE [setting_id] = 1
         """)
@@ -180,20 +259,28 @@ def load_default_appearance_settings():
                 "theme": row[0] or settings["theme"],
                 "font_family": row[1] or settings["font_family"],
                 "font_size": row[2] if row[2] is not None else settings["font_size"],
-                "accent_color": row[3] or settings["accent_color"],
-                "table_row_height": row[4] if row[4] is not None else settings["table_row_height"],
-                "alternating_rows": row[5] if row[5] is not None else settings["alternating_rows"],
+                "button_font_family": row[3] or settings["button_font_family"],
+                "button_font_size": row[4] if row[4] is not None else settings["button_font_size"],
+                "table_font_size": row[5] if row[5] is not None else settings["table_font_size"],
+                "menu_background_color": row[6] or settings["menu_background_color"],
+                "menu_text_color": row[7] or settings["menu_text_color"],
+                "accent_color": row[8] or settings["accent_color"],
+                "table_row_height": row[9] if row[9] is not None else settings["table_row_height"],
+                "alternating_rows": row[10] if row[10] is not None else settings["alternating_rows"],
             })
         else:
             cursor.execute("""
                 INSERT INTO [tblAppAppearanceDefaults]
-                ([setting_id], [theme], [font_family], [font_size], [accent_color],
-                 [table_row_height], [alternating_rows])
-                VALUES (1, ?, ?, ?, ?, ?, ?)
+                ([setting_id], [theme], [font_family], [font_size], [button_font_family],
+                 [button_font_size], [table_font_size], [menu_background_color], [menu_text_color],
+                 [accent_color], [table_row_height], [alternating_rows])
+                VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 settings["theme"], settings["font_family"], settings["font_size"],
-                settings["accent_color"], settings["table_row_height"],
-                settings["alternating_rows"],
+                settings["button_font_family"], settings["button_font_size"],
+                settings["table_font_size"], settings["menu_background_color"],
+                settings["menu_text_color"], settings["accent_color"],
+                settings["table_row_height"], settings["alternating_rows"],
             ))
             connection.commit()
     except Exception:
@@ -230,8 +317,9 @@ def save_default_appearance_settings(values):
             cursor.execute("""
                 UPDATE [tblAppAppearanceDefaults]
                 SET [theme] = ?, [font_family] = ?, [font_size] = ?,
-                    [accent_color] = ?, [table_row_height] = ?,
-                    [alternating_rows] = ?
+                    [button_font_family] = ?, [button_font_size] = ?, [table_font_size] = ?,
+                    [menu_background_color] = ?, [menu_text_color] = ?,
+                    [accent_color] = ?, [table_row_height] = ?, [alternating_rows] = ?
                 WHERE [setting_id] = 1
             """, (
                 settings["theme"], settings["font_family"], settings["font_size"],
@@ -384,19 +472,25 @@ def save_user_appearance_settings(userid, values):
                 WHERE [userid] = ?
             """, (
                 settings["theme"], settings["font_family"], settings["font_size"],
-                settings["accent_color"], settings["table_row_height"],
-                settings["alternating_rows"], user_id,
+                settings["button_font_family"], settings["button_font_size"],
+                settings["table_font_size"], settings["menu_background_color"],
+                settings["menu_text_color"], settings["accent_color"],
+                settings["table_row_height"], settings["alternating_rows"], user_id,
             ))
         else:
             cursor.execute("""
                 INSERT INTO [tblUserAppearanceSettings]
-                ([userid], [theme], [font_family], [font_size], [accent_color],
-                 [table_row_height], [alternating_rows])
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ([userid], [theme], [font_family], [font_size], [button_font_family],
+                 [button_font_size], [table_font_size], [menu_background_color], [menu_text_color],
+                 [accent_color], [table_row_height], [alternating_rows])
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 user_id, settings["theme"], settings["font_family"],
-                settings["font_size"], settings["accent_color"],
-                settings["table_row_height"], settings["alternating_rows"],
+                settings["font_size"], settings["button_font_family"],
+                settings["button_font_size"], settings["table_font_size"],
+                settings["menu_background_color"], settings["menu_text_color"],
+                settings["accent_color"], settings["table_row_height"],
+                settings["alternating_rows"],
             ))
         connection.commit()
     except Exception:
@@ -433,7 +527,7 @@ class UserAppearanceDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setMinimumWidth(430)
+        self.setMinimumWidth(500)
         self._settings = _clean_settings(settings)
         self._reset_settings = _clean_settings(
             reset_settings if reset_settings is not None else load_default_appearance_settings()
@@ -464,12 +558,36 @@ class UserAppearanceDialog(QDialog):
         self.cmbFontFamily = QComboBox(self)
         # The list is generated on each computer from its locally installed fonts.
         self.cmbFontFamily.addItems(installed_font_families())
-        form.addRow("نوع قلم (فونت‌های نصب‌شده):", self.cmbFontFamily)
+        form.addRow("نوع قلم عمومی (فونت‌های نصب‌شده):", self.cmbFontFamily)
 
         self.spinFontSize = QSpinBox(self)
         self.spinFontSize.setRange(9, 16)
         self.spinFontSize.setSuffix(" pt")
-        form.addRow("اندازه قلم:", self.spinFontSize)
+        form.addRow("اندازه قلم عمومی:", self.spinFontSize)
+
+        self.cmbButtonFontFamily = QComboBox(self)
+        self.cmbButtonFontFamily.addItems(installed_font_families())
+        form.addRow("نوع قلم دکمه‌ها:", self.cmbButtonFontFamily)
+
+        self.spinButtonFontSize = QSpinBox(self)
+        self.spinButtonFontSize.setRange(8, 20)
+        self.spinButtonFontSize.setSuffix(" pt")
+        form.addRow("اندازه قلم دکمه‌ها:", self.spinButtonFontSize)
+
+        self.spinTableFontSize = QSpinBox(self)
+        self.spinTableFontSize.setRange(8, 20)
+        self.spinTableFontSize.setSuffix(" pt")
+        form.addRow("اندازه قلم جدول‌ها:", self.spinTableFontSize)
+
+        self.cmbMenuBackground = QComboBox(self)
+        for label, color in MENU_BACKGROUND_OPTIONS:
+            self.cmbMenuBackground.addItem(label, color)
+        form.addRow("رنگ پس‌زمینه منوها:", self.cmbMenuBackground)
+
+        self.cmbMenuText = QComboBox(self)
+        for label, color in MENU_TEXT_OPTIONS:
+            self.cmbMenuText.addItem(label, color)
+        form.addRow("رنگ متن منوها:", self.cmbMenuText)
 
         self.cmbAccent = QComboBox(self)
         for label, color in ACCENT_OPTIONS:
@@ -550,6 +668,11 @@ class UserAppearanceDialog(QDialog):
         self.cmbTheme.currentIndexChanged.connect(self._mark_custom_settings)
         self.cmbFontFamily.currentIndexChanged.connect(self._mark_custom_settings)
         self.spinFontSize.valueChanged.connect(self._mark_custom_settings)
+        self.cmbButtonFontFamily.currentIndexChanged.connect(self._mark_custom_settings)
+        self.spinButtonFontSize.valueChanged.connect(self._mark_custom_settings)
+        self.spinTableFontSize.valueChanged.connect(self._mark_custom_settings)
+        self.cmbMenuBackground.currentIndexChanged.connect(self._mark_custom_settings)
+        self.cmbMenuText.currentIndexChanged.connect(self._mark_custom_settings)
         self.cmbAccent.currentIndexChanged.connect(self._mark_custom_settings)
         self.cmbRowHeight.currentIndexChanged.connect(self._mark_custom_settings)
         self.chkAlternatingRows.toggled.connect(self._mark_custom_settings)
@@ -563,6 +686,14 @@ class UserAppearanceDialog(QDialog):
         index = self.cmbFontFamily.findText(settings["font_family"])
         self.cmbFontFamily.setCurrentIndex(max(0, index))
         self.spinFontSize.setValue(settings["font_size"])
+        index = self.cmbButtonFontFamily.findText(settings["button_font_family"])
+        self.cmbButtonFontFamily.setCurrentIndex(max(0, index))
+        self.spinButtonFontSize.setValue(settings["button_font_size"])
+        self.spinTableFontSize.setValue(settings["table_font_size"])
+        index = self.cmbMenuBackground.findData(settings["menu_background_color"])
+        self.cmbMenuBackground.setCurrentIndex(max(0, index))
+        index = self.cmbMenuText.findData(settings["menu_text_color"])
+        self.cmbMenuText.setCurrentIndex(max(0, index))
         index = self.cmbAccent.findData(settings["accent_color"])
         self.cmbAccent.setCurrentIndex(max(0, index))
         index = self.cmbRowHeight.findData(settings["table_row_height"])
@@ -578,6 +709,11 @@ class UserAppearanceDialog(QDialog):
             "theme": self.cmbTheme.currentData(),
             "font_family": self.cmbFontFamily.currentText(),
             "font_size": self.spinFontSize.value(),
+            "button_font_family": self.cmbButtonFontFamily.currentText(),
+            "button_font_size": self.spinButtonFontSize.value(),
+            "table_font_size": self.spinTableFontSize.value(),
+            "menu_background_color": self.cmbMenuBackground.currentData(),
+            "menu_text_color": self.cmbMenuText.currentData(),
             "accent_color": self.cmbAccent.currentData(),
             "table_row_height": self.cmbRowHeight.currentData(),
             "alternating_rows": self.chkAlternatingRows.isChecked(),
@@ -663,4 +799,32 @@ def appearance_stylesheet(settings):
         QTabBar::tab {{ font-family: "{font_family}"; font-size: {tab_size}pt; }}
         QMenu::item {{ font-family: "{font_family}"; font-size: {font_size}pt; }}
     """
-    return qss + font_qss
+    # Explicit menu colors are independent of light/dark mode.
+    menu_background = settings["menu_background_color"]
+    menu_text = settings["menu_text_color"]
+    button_family = str(settings["button_font_family"]).replace('"', "")
+    button_size = settings["button_font_size"]
+    table_size = settings["table_font_size"]
+    specific_qss = f"""
+        QMenuBar, QMenu {{
+            background-color: {menu_background};
+            color: {menu_text};
+        }}
+        QMenuBar::item, QMenu::item {{
+            background-color: {menu_background};
+            color: {menu_text};
+        }}
+        QMenuBar::item:selected, QMenu::item:selected {{
+            background-color: {accent};
+            color: #FFFFFF;
+        }}
+        QPushButton, QToolButton {{
+            font-family: "{button_family}";
+            font-size: {button_size}pt;
+        }}
+        QTableWidget, QTableView, QTreeWidget, QTreeView, QListWidget,
+        QHeaderView::section {{
+            font-size: {table_size}pt;
+        }}
+    """
+    return qss + font_qss + specific_qss

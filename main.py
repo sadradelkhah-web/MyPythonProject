@@ -3044,7 +3044,7 @@ class MainWindow(QMainWindow):
             conflicts = []
             for row in cursor.fetchall():
                 status = normalize_status(row[4] if len(row) > 4 else "")
-                finished = self._hotel_bool(row[5] if len(row) > 5 else False) or status.casefold() == "پایان"
+                finished = self._hotel_bool(row[5] if len(row) > 5 else False) or status.casefold().replace(" ", "") in ("پایان", "تکمیلشده")
                 if finished:
                     continue
                 location_a = row[2] if len(row) > 2 else ""

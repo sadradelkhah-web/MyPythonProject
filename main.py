@@ -7434,6 +7434,8 @@ class MainWindow(QMainWindow):
         self.ui.txtTrackingNote.clear()
         self.ui.txtTrackingDate.setText(jdatetime.date.today().strftime("%Y/%m/%d"))
         self.load_report_data()
+        # با پایان تعمیر، کارت اتاق از حالت زرد خارج شود و وضعیت عادی دوباره نمایش داده شود.
+        self._hotel_load_all()
 
     def view_tracking_history(self):
         wonumber = self.ui.lblSelectedWorkNo.text().strip()

@@ -1009,10 +1009,19 @@ class MainWindow(QMainWindow):
             self.appearance_settings = settings
 
         family = str(settings.get("font_family") or "B Nazanin")
+        button_family = str(settings.get("button_font_family") or family)
         try:
             font_size = max(9, min(16, int(settings.get("font_size", 11))))
         except (TypeError, ValueError):
             font_size = 11
+        try:
+            button_font_size = max(8, min(20, int(settings.get("button_font_size", 11))))
+        except (TypeError, ValueError):
+            button_font_size = 11
+        try:
+            table_font_size = max(8, min(20, int(settings.get("table_font_size", 10))))
+        except (TypeError, ValueError):
+            table_font_size = 10
         try:
             row_height = int(settings.get("table_row_height", 34))
         except (TypeError, ValueError):
@@ -1038,9 +1047,26 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(self._appearance_base_stylesheet + "\n" + stylesheet)
 
         for widget in widgets:
+            # Buttons have their own typeface and size; tables use the separate table size.
+            try:
+                is_button = widget.inherits("QPushButton") or widget.inherits("QToolButton")
+                is_table = any(widget.inherits(name) for name in (
+                    "QTableWidget", "QTableView", "QTreeWidget", "QTreeView", "QListWidget"
+                ))
+            except Exception:
+                is_button = False
+                is_table = False
+
+            if is_button:
+                widget_family, widget_font_size = button_family, button_font_size
+            elif is_table:
+                widget_family, widget_font_size = family, table_font_size
+            else:
+                widget_family, widget_font_size = family, font_size
+
             new_font = QFont(widget._appearance_original_font)
-            new_font.setFamily(family)
-            new_font.setPointSize(font_size)
+            new_font.setFamily(widget_family)
+            new_font.setPointSize(widget_font_size)
             widget.setFont(new_font)
 
             # Append a widget-specific font rule after any existing inline style;
@@ -1051,7 +1077,7 @@ class MainWindow(QMainWindow):
             selector_class = "QWidget"
             for candidate in (
                 "QTableWidget", "QTableView", "QTreeWidget", "QTreeView",
-                "QListWidget", "QPushButton", "QToolButton", "QLineEdit",
+                "QListWidget", "QPushButton", "QToolButton", "QHeaderView", "QLineEdit",
                 "QComboBox", "QSpinBox", "QDateTimeEdit", "QDateEdit",
                 "QCheckBox", "QRadioButton", "QLabel", "QGroupBox",
                 "QMenuBar", "QMenu", "QStatusBar", "QTabWidget", "QTabBar",
@@ -1065,7 +1091,7 @@ class MainWindow(QMainWindow):
                     continue
             selector = selector_class + (f"#{widget_name}" if widget_name else "")
             widget._appearance_font_override = (
-                f'{selector} {{ font-family: "{family}"; font-size: {font_size}pt; }}'
+                f'{selector} {{ font-family: "{widget_family}"; font-size: {widget_font_size}pt; }}'
             )
             if widget is not self and widget._appearance_original_stylesheet:
                 widget.setStyleSheet(
@@ -1082,7 +1108,7 @@ class MainWindow(QMainWindow):
             )
             table.setAlternatingRowColors(bool(settings.get("alternating_rows", True)))
             table.verticalHeader().setDefaultSectionSize(row_height)
-            table.horizontalHeader().setMinimumHeight(max(32, font_size * 3))
+            table.horizontalHeader().setMinimumHeight(max(32, table_font_size * 3))
 
         # پنجره‌های تولیدشده در زمان اجرا (مانند گزارش فعالیت) تنظیمات را هم می‌گیرند.
         if hasattr(self, "tblUserActivityLog"):

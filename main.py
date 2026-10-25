@@ -2716,15 +2716,17 @@ class MainWindow(QMainWindow):
         if room_key in tokens:
             return True
 
-        # پشتیبانی از قالب‌های چسبیده مانند «لاله-A1» بدون جداکنندهٔ واضح.
-        if any(key and compact.startswith(key) for key in building_tokens):
-            remainder = compact
-            for key in building_tokens:
-                if key and remainder.startswith(key):
-                    remainder = remainder[len(key):]
-                    break
-            remainder = re.sub(r"^(?:اتاق|room)", "", remainder, flags=re.IGNORECASE)
-            return remainder == room_key
+        # پشتیبانی از قالب‌هایی مثل «ساختمان لاله، اتاق A-1»؛
+        # کد ساختمان ممکن است پس از یک عنوان متنی آمده باشد.
+        for key in building_tokens:
+            if not key:
+                continue
+            building_index = compact.find(key)
+            if building_index < 0:
+                continue
+            remainder = compact[building_index + len(key):]
+            if remainder.startswith(room_key):
+                return True
 
         return False
 

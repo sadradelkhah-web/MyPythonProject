@@ -323,19 +323,24 @@ def save_default_appearance_settings(values):
                 WHERE [setting_id] = 1
             """, (
                 settings["theme"], settings["font_family"], settings["font_size"],
-                settings["accent_color"], settings["table_row_height"],
-                settings["alternating_rows"],
+                settings["button_font_family"], settings["button_font_size"],
+                settings["table_font_size"], settings["menu_background_color"],
+                settings["menu_text_color"], settings["accent_color"],
+                settings["table_row_height"], settings["alternating_rows"],
             ))
         else:
             cursor.execute("""
                 INSERT INTO [tblAppAppearanceDefaults]
-                ([setting_id], [theme], [font_family], [font_size], [accent_color],
-                 [table_row_height], [alternating_rows])
-                VALUES (1, ?, ?, ?, ?, ?, ?)
+                ([setting_id], [theme], [font_family], [font_size], [button_font_family],
+                 [button_font_size], [table_font_size], [menu_background_color], [menu_text_color],
+                 [accent_color], [table_row_height], [alternating_rows])
+                VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 settings["theme"], settings["font_family"], settings["font_size"],
-                settings["accent_color"], settings["table_row_height"],
-                settings["alternating_rows"],
+                settings["button_font_family"], settings["button_font_size"],
+                settings["table_font_size"], settings["menu_background_color"],
+                settings["menu_text_color"], settings["accent_color"],
+                settings["table_row_height"], settings["alternating_rows"],
             ))
         connection.commit()
     except Exception:
@@ -412,8 +417,9 @@ def load_user_appearance_settings(userid):
         cursor = connection.cursor()
         _ensure_settings_table(connection, cursor)
         cursor.execute("""
-            SELECT [theme], [font_family], [font_size], [accent_color],
-                   [table_row_height], [alternating_rows]
+            SELECT [theme], [font_family], [font_size], [button_font_family],
+                   [button_font_size], [table_font_size], [menu_background_color],
+                   [menu_text_color], [accent_color], [table_row_height], [alternating_rows]
             FROM [tblUserAppearanceSettings]
             WHERE [userid] = ?
         """, (user_id,))
@@ -423,9 +429,14 @@ def load_user_appearance_settings(userid):
                 "theme": row[0] or settings["theme"],
                 "font_family": row[1] or settings["font_family"],
                 "font_size": row[2] if row[2] is not None else settings["font_size"],
-                "accent_color": row[3] or settings["accent_color"],
-                "table_row_height": row[4] if row[4] is not None else settings["table_row_height"],
-                "alternating_rows": row[5] if row[5] is not None else settings["alternating_rows"],
+                "button_font_family": row[3] or settings["button_font_family"],
+                "button_font_size": row[4] if row[4] is not None else settings["button_font_size"],
+                "table_font_size": row[5] if row[5] is not None else settings["table_font_size"],
+                "menu_background_color": row[6] or settings["menu_background_color"],
+                "menu_text_color": row[7] or settings["menu_text_color"],
+                "accent_color": row[8] or settings["accent_color"],
+                "table_row_height": row[9] if row[9] is not None else settings["table_row_height"],
+                "alternating_rows": row[10] if row[10] is not None else settings["alternating_rows"],
             })
     except Exception:
         # Keep the app usable with defaults if preferences are unavailable.
@@ -467,8 +478,9 @@ def save_user_appearance_settings(userid, values):
             cursor.execute("""
                 UPDATE [tblUserAppearanceSettings]
                 SET [theme] = ?, [font_family] = ?, [font_size] = ?,
-                    [accent_color] = ?, [table_row_height] = ?,
-                    [alternating_rows] = ?
+                    [button_font_family] = ?, [button_font_size] = ?, [table_font_size] = ?,
+                    [menu_background_color] = ?, [menu_text_color] = ?,
+                    [accent_color] = ?, [table_row_height] = ?, [alternating_rows] = ?
                 WHERE [userid] = ?
             """, (
                 settings["theme"], settings["font_family"], settings["font_size"],

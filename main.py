@@ -3069,7 +3069,7 @@ class MainWindow(QMainWindow):
 
     def _hotel_repair_block_message(self, building, room, conflicts):
         lines = [
-            f"پذیرش ساختمان «{building}»، اتاق «{room}» انجام نشد.",
+            f"هشدار: اتاق «{room}» در ساختمان «{building}» تحت تعمیر است.",
             "برای این اتاق درخواست تعمیر پایان‌نیافته ثبت شده است:"
         ]
         for item in conflicts[:8]:
@@ -3079,7 +3079,7 @@ class MainWindow(QMainWindow):
             lines.append(f"• درخواست {number}؛ {topic}؛ وضعیت: {status}")
         if len(conflicts) > 8:
             lines.append(f"و {len(conflicts) - 8} درخواست دیگر.")
-        lines.append("پس از ثبت پایان کار درخواست تعمیر، دوباره پذیرش را انجام دهید.")
+        lines.append("آیا با اطلاع از وضعیت تعمیر، پذیرش مهمان در این اتاق را ادامه می‌دهید؟")
         return "\n".join(lines)
 
     def _hotel_room_occupied_people(self, building, room, arrival=None, departure=None, exclude_id=None):
@@ -3975,22 +3975,8 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self,"تاریخ نامعتبر","تاریخ خروج واقعی را به شکل شمسی ۸ رقمی وارد کنید."); return
         if actual_arrival and actual_departure and actual_departure < actual_arrival:
             QMessageBox.warning(self,"تاریخ نامعتبر","تاریخ خروج واقعی نمی‌تواند قبل از ورود واقعی باشد."); return
-        # در مسیر پذیرش، هم مهمان جدید و هم رزروی که تاریخ ورود واقعی می‌گیرد کنترل می‌شود.
-        if checkin_now or actual_arrival:
-            try:
-                repair_conflicts = self._hotel_unfinished_repairs(building, room)
-            except Exception as exc:
-                QMessageBox.critical(
-                    self, "بررسی تعمیرات ناموفق",
-                    f"به دلیل خطا در بررسی درخواست‌های تعمیر، پذیرش انجام نشد و هیچ رکوردی ذخیره نشد.\n{exc}"
-                )
-                return
-            if repair_conflicts:
-                QMessageBox.warning(
-                    self, "ممانعت از پذیرش",
-                    self._hotel_repair_block_message(building, room, repair_conflicts)
-                )
-                return
+        # وضعیت تعمیرات در ابتدای همین عملیات از tblkar تازه‌خوانی شده و در صورت وجود
+        # تعمیر فعال، کاربر با هشدار Yes/No تصمیم گرفته است؛ نباید تأیید او دوباره مسدود شود.
         try:
             people_count = max(1, int(self.ui.txtHotelPeople.text().strip() or "1"))
         except ValueError:
@@ -4160,11 +4146,15 @@ class MainWindow(QMainWindow):
                 )
                 return
             if repair_conflicts:
-                QMessageBox.warning(
-                    self, "ممانعت از پذیرش",
-                    self._hotel_repair_block_message(building, room, repair_conflicts)
+                answer = QMessageBox.question(
+                    self,
+                    "هشدار: اتاق تحت تعمیر است",
+                    self._hotel_repair_block_message(building, room, repair_conflicts),
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No,
                 )
-                return
+                if answer != QMessageBox.StandardButton.Yes:
+                    return
 
         conn = cursor = None
         try:
@@ -4481,7 +4471,16 @@ class MainWindow(QMainWindow):
                 if action == "checkin":
                     repair_conflicts = self._hotel_unfinished_repairs(building, room, cursor=cur)
                     if repair_conflicts:
-                        raise RuntimeError(self._hotel_repair_block_message(building, room, repair_conflicts))
+                        answer = QMessageBox.question(
+                            self,
+                            "هشدار: اتاق تحت تعمیر است",
+                            self._hotel_repair_block_message(building, room, repair_conflicts),
+                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                            QMessageBox.StandardButton.No,
+                        )
+                        if answer != QMessageBox.StandardButton.Yes:
+                            conn.rollback()
+                            return
                 in_col = self._hotel_pick(selected, "TarikhIn", "actualcheckin")
                 out_col = self._hotel_pick(selected, "tarikhOut", "actualcheckout")
                 already_in = bool(in_col and selected.get(in_col))

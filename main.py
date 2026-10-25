@@ -3259,7 +3259,20 @@ class MainWindow(QMainWindow):
             guest_name = "، ".join(guest_names) if guest_names else " ".join(x for x in (self._hotel_text(display_guest.get(name_col)) if display_guest and name_col else "", self._hotel_text(display_guest.get(family_col)) if display_guest and family_col else "") if x)
             capacity_count = self._hotel_room_capacity(room_row)
             people_display = f"{total_people} از {capacity_count} نفر" if current_groups else (self._hotel_text(display_guest.get(people_col)) if display_guest and people_col else "")
-            status_display = f"{status} - تحت تعمیر" if under_repair else status
+            repair_numbers = [
+                self._hotel_text(request.get(self._hotel_pick(request, "wonumber")))
+                for request in repair_requests
+            ]
+            repair_numbers = [number for number in repair_numbers if number]
+            repair_number_text = "، ".join(repair_numbers[:3])
+            if len(repair_numbers) > 3:
+                repair_number_text += "، ..."
+
+            # شماره درخواست تعمیر باید روی خود کارت و در جدول دیده شود؛ Tooltip به‌تنهایی کافی نیست.
+            status_display = (
+                f"تخت تعمیر - شماره درخواست: {repair_number_text or 'نامشخص'}"
+                if under_repair else status
+            )
             values = [building, room, status_display, guest_name, people_display, actual_in or planned_in, planned_out, ""]
             row_idx = table.rowCount()
             table.insertRow(row_idx)
@@ -3287,27 +3300,23 @@ class MainWindow(QMainWindow):
                 shown_in = actual_in or planned_in
                 shown_out = actual_out or planned_out
                 date_line = f"\nورود {shown_in}   |   خروج {shown_out}" if shown_in or shown_out else ""
-                repair_line = "\n⚠ تحت تعمیر" if under_repair else ""
+                repair_line = (
+                    "\n🟨 تخت تعمیر"
+                    f"\nشماره درخواست: {repair_number_text or 'نامشخص'}"
+                    if under_repair else ""
+                )
                 card_text = f"{room}  ·  {building}\n●  {status}{repair_line}\n{guest_line}\n{people_line}{date_line}"
                 card = HotelRoomCardButton(card_text, self.hotelRoomCardsHost)
                 card.setObjectName("hotelRoomCardButton")
-                card.setMinimumSize(155, 128)
+                card.setMinimumSize(155, 158)
                 card.setMaximumWidth(280)
                 card.setCursor(Qt.CursorShape.PointingHandCursor)
                 card.setStyleSheet(f"QPushButton#hotelRoomCardButton {{ text-align:center; white-space:pre-wrap; background:{bg}; border:1px solid {border}; border-radius:10px; padding:9px; color:{accent}; font-size:11pt; font-weight:bold; }} QPushButton#hotelRoomCardButton:hover {{ border:2px solid {accent}; }}")
                 card.clicked.connect(lambda checked=False, b=building, r=room: self._hotel_open_room_for_reception(b, r))
                 if under_repair:
-                    numbers = [
-                        self._hotel_text(request.get(self._hotel_pick(request, "wonumber")))
-                        for request in repair_requests
-                    ]
-                    numbers = [number for number in numbers if number]
-                    detail = "، ".join(numbers[:5]) or "شماره درخواست نامشخص"
-                    if len(numbers) > 5:
-                        detail += "، ..."
                     card.setToolTip(
-                        "هشدار: برای این اتاق درخواست تعمیر پایان‌نیافته ثبت شده است. "
-                        f"شماره درخواست‌ها: {detail}\n"
+                        "هشدار: این اتاق درخواست تعمیر پایان‌نیافته دارد. "
+                        f"شماره درخواست‌ها: {repair_number_text or 'نامشخص'}\n"
                         "برای پذیرش کلیک کنید؛ برای تغییر ظرفیت دوبار کلیک کنید."
                     )
                 else:

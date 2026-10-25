@@ -5,7 +5,7 @@ account, using tbluser.userid as the per-user key.
 """
 from copy import deepcopy
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -384,7 +384,9 @@ def save_user_appearance_settings(userid, values):
 
 
 class UserAppearanceDialog(QDialog):
-    """Settings dialog. The parent window applies changes only after saving."""
+    """Appearance settings dialog with an explicit temporary-preview action."""
+
+    previewRequested = Signal(dict)
 
     def __init__(
         self, parent=None, settings=None, *, title="تنظیمات ظاهری من",
@@ -458,6 +460,17 @@ class UserAppearanceDialog(QDialog):
         )
         buttons.button(QDialogButtonBox.StandardButton.Save).setText("ذخیره")
         buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("انصراف")
+
+        # پیش‌نمایش فقط ظاهر را موقتاً در پنجره اصلی تغییر می‌دهد؛ چیزی ذخیره نمی‌کند.
+        self.btnPreview = QPushButton("اعمال آزمایشی", self)
+        self.btnPreview.setToolTip(
+            "ظاهر انتخاب‌شده را موقتاً روی برنامه اعمال می‌کند؛ برای ماندگاری روی «ذخیره» بزنید."
+        )
+        buttons.addButton(self.btnPreview, QDialogButtonBox.ButtonRole.ActionRole)
+        self.btnPreview.clicked.connect(
+            lambda checked=False: self.previewRequested.emit(self.selected_settings())
+        )
+
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         root.addWidget(buttons)

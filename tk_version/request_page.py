@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import filedialog, messagebox, ttk
 
 import jdatetime
+from openpyxl import Workbook
 
 from db_config import get_connection
 from user_activity_log import log_user_event
@@ -135,6 +136,13 @@ class RequestPage(ttk.Frame):
         self.search_var.trace_add("write", self._schedule_search)
         ttk.Button(toolbar, text=rtl_text("پاک کردن جست‌وجو"), command=lambda: self.search_var.set("")).grid(row=0, column=0, padx=6)
 
+        ttk.Label(toolbar, text=rtl_text("فیلتر موضوع:"), anchor="e").grid(row=1, column=2, sticky="e", padx=(8, 4), pady=(7, 0))
+        self.filter_topic_var = tk.StringVar(value="همه موضوعات")
+        self.filter_topic_combo = ttk.Combobox(toolbar, textvariable=self.filter_topic_var, justify="right", state="readonly")
+        self.filter_topic_combo.grid(row=1, column=1, sticky="ew", padx=6, pady=(7, 0))
+        self.filter_topic_combo.bind("<<ComboboxSelected>>", lambda _event: self.refresh_list())
+        ttk.Button(toolbar, text=rtl_text("خروجی اکسل"), command=self.export_excel).grid(row=1, column=0, padx=6, pady=(7, 0))
+
         self.status_var = tk.StringVar(value="آماده")
         status = ttk.Label(self, textvariable=self.status_var, style="Muted.TLabel", anchor="e", justify="right")
         status.grid(row=2, column=0, sticky="ew", pady=(0, 6))
@@ -231,7 +239,12 @@ class RequestPage(ttk.Frame):
             self._close_db(cursor, conn)
         if not topics:
             topics = ["برق", "مکانیک", "تأسیسات", "ساختمانی", "ابزار دقیق", "سایر"]
-        self.topic_combo["values"] = list(dict.fromkeys(topics))
+        unique_topics = list(dict.fromkeys(topics))
+        self.topic_combo["values"] = unique_topics
+        if hasattr(self, "filter_topic_combo"):
+            self.filter_topic_combo["values"] = ["همه موضوعات"] + unique_topics
+            if self.filter_topic_var.get() not in self.filter_topic_combo["values"]:
+                self.filter_topic_var.set("همه موضوعات")
 
     @staticmethod
     def _close_db(cursor, conn) -> None:
@@ -452,6 +465,11 @@ class RequestPage(ttk.Frame):
                 conditions.append("(" + " OR ".join(f"{field} LIKE ?" for field in like_fields) + " OR CStr([wonumber]) LIKE ?)")
                 params.extend([f"%{search}%"] * (len(like_fields) + 1))
 
+            selected_topic = self.filter_topic_var.get().strip()
+            if selected_topic and selected_topic != "همه موضوعات":
+                conditions.append("[mozooe] = ?")
+                params.append(selected_topic)
+
             if conditions:
                 sql += " WHERE " + " AND ".join(conditions)
             order_col = "[id]" if not self._columns or "id" in self._columns else "[wonumber]"
@@ -480,6 +498,54 @@ class RequestPage(ttk.Frame):
             self.status_var.set("دریافت فهرست ناموفق بود؛ اتصال دیتابیس و ساختار tblkar را بررسی کنید.")
             # در حالت قطع شبکه پیام دائمی و مزاحم نمایش نمی‌دهیم؛ خطا در نوار وضعیت دیده می‌شود.
             self._last_load_error = str(exc)
+
+    def export_excel(self) -> None:
+        """خروجی اکسل از ردیف‌های فعلی جدول، با رعایت جست‌وجو و فیلتر موضوع."""
+        if not self.tree.get_children():
+            messagebox.showinfo("خروجی اکسل", "برای خروجی گرفتن، ابتدا فهرست درخواست‌ها را دریافت کنید.", parent=self.winfo_toplevel())
+            return
+        path = filedialog.asksaveasfilename(
+            parent=self.winfo_toplevel(),
+            title="ذخیره گزارش درخواست‌ها",
+            defaultextension=".xlsx",
+            filetypes=[("Excel Workbook", "*.xlsx")],
+            initialfile="گزارش_درخواست‌های_تعمیرات.xlsx",
+        )
+        if not path:
+            return
+
+        headers = [
+            "ردیف", "شماره درخواست", "واحد", "تاریخ درخواست", "موضوع",
+            "محل کار", "محل کار فرعی", "درخواست‌کننده", "شرح درخواست",
+            "وضعیت", "تاریخ پیگیری", "شرح پیگیری",
+        ]
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "درخواست‌های تعمیرات"
+        sheet.append(headers)
+        for index, iid in enumerate(self.tree.get_children(), start=1):
+            data = self._rows_by_id.get(iid, {})
+            follow_date = data.get("tarikh") or data.get("tarikhpey") or ""
+            sheet.append([
+                index, data.get("wonumber", ""), data.get("vahed", ""),
+                _display_date(data.get("tarikhdarkhast")), data.get("mozooe", ""),
+                data.get("mahalkara", ""), data.get("mahalkarf", ""),
+                data.get("darkhastkonande", ""), data.get("sharh", ""),
+                data.get("vaziyat", "ثبت نشده") or "ثبت نشده",
+                _display_date(follow_date), data.get("sharhepey", ""),
+            ])
+        sheet.freeze_panes = "A2"
+        sheet.auto_filter.ref = sheet.dimensions
+        for column_cells in sheet.columns:
+            letter = column_cells[0].column_letter
+            max_length = max(len(str(cell.value or "")) for cell in column_cells)
+            sheet.column_dimensions[letter].width = min(max(max_length + 3, 12), 55)
+        try:
+            workbook.save(path)
+            self.status_var.set(f"گزارش اکسل ذخیره شد: {path}")
+            messagebox.showinfo("خروجی اکسل", "فایل گزارش با موفقیت ذخیره شد.", parent=self.winfo_toplevel())
+        except Exception as exc:
+            messagebox.showerror("خطای خروجی اکسل", f"ذخیره فایل انجام نشد:\n{exc}", parent=self.winfo_toplevel())
 
     def _show_selected_summary(self, _event=None) -> None:
         selection = self.tree.selection()

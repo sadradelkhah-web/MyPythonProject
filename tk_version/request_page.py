@@ -412,20 +412,21 @@ class RequestPage(ttk.Frame):
                 "tarikhpey": "NULL AS [tarikhpey]",
                 "sharhepey": "'' AS [sharhepey]",
             }
-            selected = list(CORE_COLUMNS)
+            selected_names = list(CORE_COLUMNS)
+            select_expressions = [f"[{name}]" for name in CORE_COLUMNS]
             for name in ("vaziyat", "tarikh", "tarikhpey", "sharhepey"):
                 if self._columns and name in self._columns:
                     if name == "tarikhpey" and "tarikh" in self._columns:
                         continue
                     if name == "tarikh" and "tarikhpey" in self._columns:
                         continue
-                    selected.append(name)
+                    selected_names.append(name)
+                    select_expressions.append(f"[{name}]")
                 elif self._columns:
-                    selected.append(optional[name])
+                    selected_names.append(name)
+                    select_expressions.append(optional[name])
 
-            sql = "SELECT " + ", ".join(
-                item if " AS " in item else f"[{item}]" for item in selected
-            ) + " FROM [tblkar]"
+            sql = "SELECT " + ", ".join(select_expressions) + " FROM [tblkar]"
             conditions = []
             params = []
 
@@ -453,7 +454,7 @@ class RequestPage(ttk.Frame):
             rows = cursor.fetchall()
 
             for index, row in enumerate(rows, start=1):
-                data = dict(zip(selected, row))
+                data = dict(zip(selected_names, row))
                 follow_date = data.get("tarikh") or data.get("tarikhpey") or ""
                 values = [
                     index, data.get("wonumber", ""), data.get("vahed", ""),

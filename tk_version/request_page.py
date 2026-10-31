@@ -7,6 +7,7 @@ from tkinter import messagebox, ttk
 import jdatetime
 
 from db_config import get_connection
+from user_activity_log import log_user_event
 from .rtl import rtl_text
 from .theme import COLORS
 
@@ -363,6 +364,11 @@ class RequestPage(ttk.Frame):
                 tuple(insert_values[name] for name in names),
             )
             conn.commit()
+            log_user_event(
+                self.username, "Create", "درخواست کار",
+                f"ثبت درخواست شماره {values['wonumber']}؛ موضوع: {values['mozooe']}",
+                record_id=values["wonumber"], result="Success",
+            )
             self.status_var.set(f"درخواست شماره {values['wonumber']} با موفقیت ثبت شد.")
             messagebox.showinfo("ثبت درخواست", "درخواست با موفقیت ثبت شد.", parent=self.winfo_toplevel())
             self._load_topic_choices()
@@ -459,7 +465,7 @@ class RequestPage(ttk.Frame):
                 values = [
                     index, data.get("wonumber", ""), data.get("vahed", ""),
                     _display_date(data.get("tarikhdarkhast")), data.get("mozooe", ""),
-                    data.get("mahalkarf", ""), data.get("mahalkara", ""),
+                    data.get("mahalkara", ""), data.get("mahalkarf", ""),
                     data.get("darkhastkonande", ""), data.get("sharh", ""),
                     data.get("vaziyat", "ثبت نشده") or "ثبت نشده",
                     _display_date(follow_date), data.get("sharhepey", ""),

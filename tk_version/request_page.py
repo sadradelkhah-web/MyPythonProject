@@ -359,10 +359,15 @@ class RequestPage(ttk.Frame):
                 "editor": self.username,
                 "sharhepey": "",
             }
-            for name, value in optional_values.items():
-                if not self._columns or name.casefold() in self._columns:
-                    # اگر هر دو نام قدیمی و جدید تاریخ پیگیری وجود داشته باشند،
-                    # فقط ستون tarikh را برای جلوگیری از دوگانگی مقداردهی می‌کنیم.
+            if not self._columns:
+                # رفتار سازگار با نسخه قبلی در صورت عدم پشتیبانی درایور از metadata.
+                for name in ("vaziyat", "payan", "tarikh", "editor", "sharhepey"):
+                    insert_values[name] = optional_values[name]
+            else:
+                for name, value in optional_values.items():
+                    if name.casefold() not in self._columns:
+                        continue
+                    # فقط یکی از نام‌های تاریخ پیگیری استفاده می‌شود.
                     if name == "tarikhpey" and "tarikh" in self._columns:
                         continue
                     if name == "tarikh" and "tarikhpey" in self._columns:

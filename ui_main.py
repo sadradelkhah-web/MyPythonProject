@@ -307,7 +307,7 @@ class Ui_MainWindow(object):
         self.dateTarikhdarkhast = QLineEdit(self.tabKar)
         self.dateTarikhdarkhast.setObjectName(u"dateTarikhdarkhast")
 
-        self.formLayoutKar.setWidget(2, QFormLayout.ItemRole.FieldRole, self.dateTarikhdarkhast)
+        self.formLayoutKar.setWidget(3, QFormLayout.ItemRole.FieldRole, self.dateTarikhdarkhast)
 
         self.label_15 = QLabel(self.tabKar)
         self.label_15.setObjectName(u"label_15")
@@ -816,15 +816,25 @@ class Ui_MainWindow(object):
 
         self.gridTracking.addWidget(self.txtTrackingNote, 1, 1, 1, 5)
 
+        self.lblTrackingConsumablePartTitle = QLabel(self.groupTracking)
+        self.lblTrackingConsumablePartTitle.setObjectName(u"lblTrackingConsumablePartTitle")
+
+        self.gridTracking.addWidget(self.lblTrackingConsumablePartTitle, 2, 0, 1, 1)
+
+        self.txtTrackingConsumablePart = QLineEdit(self.groupTracking)
+        self.txtTrackingConsumablePart.setObjectName(u"txtTrackingConsumablePart")
+
+        self.gridTracking.addWidget(self.txtTrackingConsumablePart, 2, 1, 1, 5)
+
         self.btnSaveTracking = QPushButton(self.groupTracking)
         self.btnSaveTracking.setObjectName(u"btnSaveTracking")
 
-        self.gridTracking.addWidget(self.btnSaveTracking, 2, 1, 1, 1)
+        self.gridTracking.addWidget(self.btnSaveTracking, 3, 1, 1, 1)
 
         self.btnViewTrackingHistory = QPushButton(self.groupTracking)
         self.btnViewTrackingHistory.setObjectName(u"btnViewTrackingHistory")
 
-        self.gridTracking.addWidget(self.btnViewTrackingHistory, 2, 2, 1, 1)
+        self.gridTracking.addWidget(self.btnViewTrackingHistory, 3, 2, 1, 1)
 
         self.horizontalLayoutReportStats = QHBoxLayout()
         self.horizontalLayoutReportStats.setObjectName(u"horizontalLayoutReportStats")
@@ -854,7 +864,7 @@ class Ui_MainWindow(object):
         self.horizontalLayoutReportStats.addWidget(self.lblReportPendingCount)
 
 
-        self.gridTracking.addLayout(self.horizontalLayoutReportStats, 3, 0, 1, 6)
+        self.gridTracking.addLayout(self.horizontalLayoutReportStats, 4, 0, 1, 6)
 
 
         self.verticalLayoutReport.addWidget(self.groupTracking)
@@ -928,7 +938,7 @@ class Ui_MainWindow(object):
         self.lblMescPic = QLabel(self.groupMescFields)
         self.lblMescPic.setObjectName(u"lblMescPic")
 
-        self.gridLayoutMescFields.addWidget(self.lblMescPic, 2, 2, 1, 1)
+        self.gridLayoutMescFields.addWidget(self.lblMescPic, 3, 2, 1, 1)
 
         self.mescPicturePanel = QWidget(self.groupMescFields)
         self.mescPicturePanel.setObjectName(u"mescPicturePanel")
@@ -2530,6 +2540,8 @@ class Ui_MainWindow(object):
         self.lblTrackingStatusTitle.setText(QCoreApplication.translate("MainWindow", u"\u0648\u0636\u0639\u06cc\u062a \u062c\u062f\u06cc\u062f:", None))
         self.lblTrackingDateTitle.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0627\u0631\u06cc\u062e \u067e\u06cc\u06af\u06cc\u0631\u06cc:", None))
         self.lblTrackingNoteTitle.setText(QCoreApplication.translate("MainWindow", u"\u0634\u0631\u062d \u067e\u06cc\u06af\u06cc\u0631\u06cc / \u0646\u062a\u06cc\u062c\u0647 \u0627\u0646\u062c\u0627\u0645 \u06a9\u0627\u0631:", None))
+        self.lblTrackingConsumablePartTitle.setText(QCoreApplication.translate("MainWindow", u"\u0642\u0637\u0639\u0647 \u0645\u0635\u0631\u0641\u06cc:", None))
+        self.txtTrackingConsumablePart.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u062f\u0631 \u0635\u0648\u0631\u062a \u0645\u0635\u0631\u0641\u060c \u0646\u0627\u0645 \u0642\u0637\u0639\u0647 \u0631\u0627 \u0648\u0627\u0631\u062f \u06a9\u0646\u06cc\u062f", None))
         self.btnSaveTracking.setText(QCoreApplication.translate("MainWindow", u"\u062b\u0628\u062a \u067e\u06cc\u06af\u06cc\u0631\u06cc / \u062a\u06a9\u0645\u06cc\u0644 \u06a9\u0627\u0631", None))
         self.btnViewTrackingHistory.setText(QCoreApplication.translate("MainWindow", u"\u0645\u0634\u0627\u0647\u062f\u0647 \u0633\u0648\u0627\u0628\u0642 \u067e\u06cc\u06af\u06cc\u0631\u06cc", None))
         self.lblReportTotalCount.setText(QCoreApplication.translate("MainWindow", u"\u06a9\u0644 \u06a9\u0627\u0631\u0647\u0627: 0", None))

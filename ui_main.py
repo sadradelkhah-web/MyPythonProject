@@ -46,10 +46,14 @@ class Ui_MainWindow(object):
         self.actionEquipmentList.setObjectName(u"actionEquipmentList")
         self.actionAssets = QAction(MainWindow)
         self.actionAssets.setObjectName(u"actionAssets")
+        self.actionMesc = QAction(MainWindow)
+        self.actionMesc.setObjectName(u"actionMesc")
         self.actionReportRepairs = QAction(MainWindow)
         self.actionReportRepairs.setObjectName(u"actionReportRepairs")
         self.actionReportEquipment = QAction(MainWindow)
         self.actionReportEquipment.setObjectName(u"actionReportEquipment")
+        self.actionUserActivityLog = QAction(MainWindow)
+        self.actionUserActivityLog.setObjectName(u"actionUserActivityLog")
         self.actionAbout = QAction(MainWindow)
         self.actionAbout.setObjectName(u"actionAbout")
         self.actionHotel = QAction(MainWindow)
@@ -134,6 +138,11 @@ class Ui_MainWindow(object):
         self.btnEquipment.setMinimumSize(QSize(0, 42))
 
         self.verticalLayoutNavigation.addWidget(self.btnEquipment)
+
+        self.btnMesc = QPushButton(self.navigationPanel)
+        self.btnMesc.setObjectName(u"btnMesc")
+        self.btnMesc.setMinimumSize(QSize(0, 42))
+        self.verticalLayoutNavigation.addWidget(self.btnMesc)
 
         self.btnAssets = QPushButton(self.navigationPanel)
         self.btnAssets.setObjectName(u"btnAssets")
@@ -242,7 +251,7 @@ class Ui_MainWindow(object):
         self.btnOpenHotel.setObjectName(u"btnOpenHotel")
         self.btnOpenHotel.setMinimumSize(QSize(0, 70))
 
-        self.gridLayoutHome.addWidget(self.btnOpenHotel, 2, 1, 1, 1)
+        self.gridLayoutHome.addWidget(self.btnOpenHotel, 3, 1, 1, 1)
 
         self.btnOpenAnbarTahrir = QPushButton(self.tabHome)
         self.btnOpenAnbarTahrir.setObjectName(u"btnOpenAnbarTahrir")
@@ -256,6 +265,10 @@ class Ui_MainWindow(object):
 
         self.gridLayoutHome.addWidget(self.btnOpenMtoTahrir, 4, 1, 1, 1)
 
+        self.btnOpenUserActivityLog = QPushButton(self.tabHome)
+        self.btnOpenUserActivityLog.setObjectName(u"btnOpenUserActivityLog")
+        self.btnOpenUserActivityLog.setMinimumSize(QSize(0, 70))
+        self.gridLayoutHome.addWidget(self.btnOpenUserActivityLog, 5, 0, 1, 1)
 
         self.verticalLayoutHome.addLayout(self.gridLayoutHome)
 
@@ -2375,11 +2388,13 @@ class Ui_MainWindow(object):
         self.menuRepairs.addAction(self.actionRepairsHistory)
         self.menuEquipment.addAction(self.actionEquipmentList)
         self.menuEquipment.addAction(self.actionAssets)
+        self.menuEquipment.addAction(self.actionMesc)
         self.menuHotel.addAction(self.actionHotel)
         self.menuStationery.addAction(self.actionAnbarTahrir)
         self.menuStationery.addAction(self.actionMtoTahrir)
         self.menuReports.addAction(self.actionReportRepairs)
         self.menuReports.addAction(self.actionReportEquipment)
+        self.menuReports.addAction(self.actionUserActivityLog)
         self.menuHelp.addAction(self.actionAbout)
 
         self.retranslateUi(MainWindow)
@@ -2417,8 +2432,10 @@ class Ui_MainWindow(object):
         self.actionRepairsHistory.setText(QCoreApplication.translate("MainWindow", u"\u0633\u0648\u0627\u0628\u0642 \u062a\u0639\u0645\u06cc\u0631\u0627\u062a", None))
         self.actionEquipmentList.setText(QCoreApplication.translate("MainWindow", u"\u0641\u0647\u0631\u0633\u062a \u062a\u062c\u0647\u06cc\u0632\u0627\u062a", None))
         self.actionAssets.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0645\u0648\u0627\u0644", None))
+        self.actionMesc.setText(QCoreApplication.translate("MainWindow", u"\u0645\u062f\u06cc\u0631\u06cc\u062a \u06a9\u062f \u06a9\u0627\u0644\u0627\u0647\u0627\u06cc MESC", None))
         self.actionReportRepairs.setText(QCoreApplication.translate("MainWindow", u"\u06af\u0632\u0627\u0631\u0634 \u062a\u0639\u0645\u06cc\u0631\u0627\u062a", None))
         self.actionReportEquipment.setText(QCoreApplication.translate("MainWindow", u"\u06af\u0632\u0627\u0631\u0634 \u062a\u062c\u0647\u06cc\u0632\u0627\u062a", None))
+        self.actionUserActivityLog.setText(QCoreApplication.translate("MainWindow", u"\u06af\u0632\u0627\u0631\u0634 \u0641\u0639\u0627\u0644\u06cc\u062a \u06a9\u0627\u0631\u0628\u0631\u0627\u0646", None))
         self.actionAbout.setText(QCoreApplication.translate("MainWindow", u"\u062f\u0631\u0628\u0627\u0631\u0647 \u0628\u0631\u0646\u0627\u0645\u0647", None))
         self.actionHotel.setText(QCoreApplication.translate("MainWindow", u"\u0627\u062a\u0627\u0642\u062f\u0627\u0631\u06cc \u0648 \u0645\u0647\u0645\u0627\u0646\u0633\u0631\u0627", None))
         self.actionAnbarTahrir.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0646\u0628\u0627\u0631 \u0644\u0648\u0627\u0632\u0645\u200c\u0627\u0644\u062a\u062d\u0631\u06cc\u0631", None))
@@ -2434,6 +2451,7 @@ class Ui_MainWindow(object):
         self.btnTabPermissions.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0639\u06cc\u06cc\u0646 \u062f\u0633\u062a\u0631\u0633\u06cc \u062a\u0628\u200c\u0647\u0627", None))
         self.btnRepairs.setText(QCoreApplication.translate("MainWindow", u"\u062f\u0631\u062e\u0648\u0627\u0633\u062a \u06a9\u0627\u0631", None))
         self.btnEquipment.setText(QCoreApplication.translate("MainWindow", u"\u062a\u062c\u0647\u06cc\u0632\u0627\u062a", None))
+        self.btnMesc.setText(QCoreApplication.translate("MainWindow", u"\u0645\u062f\u06cc\u0631\u06cc\u062a \u06a9\u062f \u06a9\u0627\u0644\u0627\u0647\u0627\u06cc MESC", None))
         self.btnAssets.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0645\u0648\u0627\u0644", None))
         self.btnHotel.setText(QCoreApplication.translate("MainWindow", u"\u0627\u062a\u0627\u0642\u200c\u062f\u0627\u0631\u06cc", None))
         self.btnReports.setText(QCoreApplication.translate("MainWindow", u"\u06af\u0632\u0627\u0631\u0634 \u0648 \u067e\u06cc\u06af\u06cc\u0631\u06cc", None))
@@ -2450,7 +2468,8 @@ class Ui_MainWindow(object):
         self.btnOpenAssets.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0645\u0648\u0627\u0644", None))
         self.btnOpenHotel.setText(QCoreApplication.translate("MainWindow", u"\u0645\u062f\u06cc\u0631\u06cc\u062a \u0627\u062a\u0627\u0642\u200c\u062f\u0627\u0631\u06cc", None))
         self.btnOpenAnbarTahrir.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0646\u0628\u0627\u0631 \u0644\u0648\u0627\u0632\u0645\u200c\u0627\u0644\u062a\u062d\u0631\u06cc\u0631", None))
-        self.btnOpenMtoTahrir.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0642\u0627\u0636\u0627\u06cc \u0644\u0648\u0627\u0632\u0645\u200c\u0627\u0644\u062a\u062d\u0631\u06cc\u0631", None))
+        self.btnOpenMtoTahrir.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0642\u0627\u0636\u0627\u06cc \u0644\u0648\u0627\u0632\u0645\u200c\u0627\u0644\u062a\u062d\u0631\u06ccر", None))
+        self.btnOpenUserActivityLog.setText(QCoreApplication.translate("MainWindow", u"\u06af\u0632\u0627\u0631\u0634 \u0641\u0639\u0627\u0644\u06cc\u062a \u06a9\u0627\u0631\u0628\u0631\u0627\u0646", None))
         self.tabMain.setTabText(self.tabMain.indexOf(self.tabHome), QCoreApplication.translate("MainWindow", u"\u0635\u0641\u062d\u0647 \u0627\u0635\u0644\u06cc", None))
         self.btnBackHomeKar.setText(QCoreApplication.translate("MainWindow", u"\u062e\u0631\u0648\u062c \u0627\u0632 \u0627\u06cc\u0646 \u062a\u0628", None))
         self.label_11.setText(QCoreApplication.translate("MainWindow", u"\u0634\u0645\u0627\u0631\u0647 \u062f\u0631\u062e\u0648\u0627\u0633\u062a:", None))

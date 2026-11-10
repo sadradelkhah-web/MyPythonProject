@@ -830,20 +830,32 @@ class Ui_MainWindow(object):
         self.horizontalLayoutReportStats.setObjectName(u"horizontalLayoutReportStats")
         self.lblReportTotalCount = QLabel(self.groupTracking)
         self.lblReportTotalCount.setObjectName(u"lblReportTotalCount")
+
         self.horizontalLayoutReportStats.addWidget(self.lblReportTotalCount)
+
         self.lblReportCompletedCount = QLabel(self.groupTracking)
         self.lblReportCompletedCount.setObjectName(u"lblReportCompletedCount")
+
         self.horizontalLayoutReportStats.addWidget(self.lblReportCompletedCount)
+
         self.lblReportStoppedCount = QLabel(self.groupTracking)
         self.lblReportStoppedCount.setObjectName(u"lblReportStoppedCount")
+
         self.horizontalLayoutReportStats.addWidget(self.lblReportStoppedCount)
+
         self.lblReportInProgressCount = QLabel(self.groupTracking)
         self.lblReportInProgressCount.setObjectName(u"lblReportInProgressCount")
+
         self.horizontalLayoutReportStats.addWidget(self.lblReportInProgressCount)
+
         self.lblReportPendingCount = QLabel(self.groupTracking)
         self.lblReportPendingCount.setObjectName(u"lblReportPendingCount")
+
         self.horizontalLayoutReportStats.addWidget(self.lblReportPendingCount)
+
+
         self.gridTracking.addLayout(self.horizontalLayoutReportStats, 3, 0, 1, 6)
+
 
         self.verticalLayoutReport.addWidget(self.groupTracking)
 
@@ -2524,7 +2536,7 @@ class Ui_MainWindow(object):
         self.lblReportCompletedCount.setText(QCoreApplication.translate("MainWindow", u"\u067e\u0627\u06cc\u0627\u0646\u200c\u06cc\u0627\u0641\u062a\u0647: 0", None))
         self.lblReportStoppedCount.setText(QCoreApplication.translate("MainWindow", u"\u0645\u062a\u0648\u0642\u0641\u200c\u0634\u062f\u0647: 0", None))
         self.lblReportInProgressCount.setText(QCoreApplication.translate("MainWindow", u"\u062f\u0631 \u062d\u0627\u0644 \u0627\u0646\u062c\u0627\u0645: 0", None))
-        self.lblReportPendingCount.setText(QCoreApplication.translate("MainWindow", u"\u062f\u0631 \u0627\u0646\u062a\u0638\u0627\u0631 \u0628\u0631\u0633\u06cc: 0", None))
+        self.lblReportPendingCount.setText(QCoreApplication.translate("MainWindow", u"\u062f\u0631 \u0627\u0646\u062a\u0638\u0627\u0631 \u0628\u0631\u0631\u0633\u06cc: 0", None))
         self.tabMain.setTabText(self.tabMain.indexOf(self.tabReport), QCoreApplication.translate("MainWindow", u"\u06af\u0632\u0627\u0631\u0634 \u0648 \u067e\u06cc\u06af\u06cc\u0631\u06cc \u06a9\u0627\u0631\u0647\u0627", None))
         self.btnBackHomeMesc.setText(QCoreApplication.translate("MainWindow", u"\u062e\u0631\u0648\u062c \u0627\u0632 \u0627\u06cc\u0646 \u062a\u0628", None))
         self.groupMescFields.setTitle(QCoreApplication.translate("MainWindow", u"\u0627\u0637\u0644\u0627\u0639\u0627\u062a \u06a9\u062f \u06a9\u0627\u0644\u0627", None))

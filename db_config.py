@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent
 ENV_FILE = BASE_DIR / ".env"
 
-load_dotenv(ENV_FILE)
-
+# مقادیر فایل .env باید بر متغیرهای محیطی قدیمی اولویت داشته باشند.
+load_dotenv(ENV_FILE, override=True)
 
 DB_PATH = os.getenv("DB_PATH")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
@@ -23,11 +23,20 @@ if not DB_PASSWORD:
 
 
 def get_connection():
+    db_file = Path(DB_PATH)
+
+    if not db_file.is_file():
+        raise FileNotFoundError(
+            f"فایل پایگاه داده پیدا نشد: {DB_PATH}"
+        )
+
+    # قالب‌بندی مقدار PWD برای جلوگیری از تفسیر اشتباه کاراکترهای خاص ODBC
+    safe_password = "{" + DB_PASSWORD.replace("}", "}}") + "}"
 
     connection_string = (
         r"DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};"
-        rf"DBQ={DB_PATH};"
-        rf"PWD={DB_PASSWORD};"
+        f"DBQ={db_file};"
+        f"PWD={safe_password};"
     )
 
-    return pyodbc.connect(connection_string)
+    return pyodbc.connect(connection_string, timeout=15)

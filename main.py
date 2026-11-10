@@ -6576,7 +6576,7 @@ class MainWindow(QMainWindow):
             count = len(getattr(self, "_report_export_rows", []))
             stamp = datetime.now().strftime("%H:%M:%S")
             self.ui.lblReportResultCount.setText(
-                f"گزارش به‌روزرسانی شد | تعداد نتایج: {count} | ساعت {stamp}"
+                f"گزارش به‌روزرسانی شد | نتایج: {count} | ساعت {stamp}"
             )
         except Exception as exc:
             self.ui.lblReportResultCount.setText("دریافت گزارش ناموفق بود.")
@@ -6790,7 +6790,7 @@ class MainWindow(QMainWindow):
         self._report_last_load_success = True
         report_stamp = datetime.now().strftime("%H:%M:%S")
         self.ui.lblReportResultCount.setText(
-            f"تعداد نتایج: {len(display_rows)} | آخرین به‌روزرسانی: {report_stamp}"
+            f"نتایج: {len(display_rows)} | آخرین به‌روزرسانی: {report_stamp}"
         )
 
     def export_report_excel(self, *_args):

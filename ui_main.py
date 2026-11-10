@@ -242,7 +242,7 @@ class Ui_MainWindow(object):
         self.btnOpenHotel.setObjectName(u"btnOpenHotel")
         self.btnOpenHotel.setMinimumSize(QSize(0, 70))
 
-        self.gridLayoutHome.addWidget(self.btnOpenHotel, 3, 1, 1, 1)
+        self.gridLayoutHome.addWidget(self.btnOpenHotel, 2, 1, 1, 1)
 
         self.btnOpenAnbarTahrir = QPushButton(self.tabHome)
         self.btnOpenAnbarTahrir.setObjectName(u"btnOpenAnbarTahrir")

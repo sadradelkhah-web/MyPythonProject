@@ -6367,6 +6367,12 @@ class MainWindow(QMainWindow):
         ])
 
         table = self.ui.tblReportList
+        table.setColumnCount(12)
+        table.setHorizontalHeaderLabels([
+            "ردیف", "شماره درخواست", "واحد", "تاریخ درخواست",
+            "موضوع درخواست", "محل کار", "درخواست‌کننده", "شرح درخواست",
+            "وضعیت", "تاریخ پیگیری/پایان", "شرح پیگیری", "قطعه مصرفی"
+        ])
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -6596,7 +6602,8 @@ class MainWindow(QMainWindow):
             sql = """
                 SELECT [wonumber], [vahed], [tarikhdarkhast], [mozooe],
                        [mahalkarf], [mahalkara], [darkhastkonande], [sharh],
-                       [vaziyat], [tarikh], [sharhepey], [payan], [editor]
+                       [vaziyat], [tarikh], [sharhepey], [payan], [editor],
+                       [GeteMasarfi]
                 FROM [tblkar]
             """
             conditions = []
@@ -6689,6 +6696,7 @@ class MainWindow(QMainWindow):
             # در رکوردهای قدیمی ممکن است وضعیت خالی باشد، اما فیلد payan درست باشد.
             payan_value = row[11] if len(row) > 11 else False
             editor = str(row[12] or "").strip() if len(row) > 12 else ""
+            consumable_part = str(row[13] or "").strip() if len(row) > 13 else ""
             is_completed = payan_value is True or str(payan_value).strip().casefold() in ("true", "1", "-1", "yes")
             status = normalize_status(raw_status) or ("پایان" if is_completed else "ثبت نشده")
             if is_completed:
@@ -6713,6 +6721,7 @@ class MainWindow(QMainWindow):
             haystack = " ".join([
                 wonumber, unit, date_raw, topic, area, sub_area,
                 requester, request_description, status, followup_description,
+                consumable_part,
             ]).casefold()
             if search and search not in haystack and normalize_digits(search) not in normalize_digits(haystack):
                 continue
@@ -6720,6 +6729,7 @@ class MainWindow(QMainWindow):
             display_rows.append((
                 wonumber, unit, date_raw, topic, area, requester,
                 request_description, status, followup_date, followup_description,
+                consumable_part,
             ))
             export_rows.append({
                 "شماره درخواست": wonumber,
@@ -6735,6 +6745,7 @@ class MainWindow(QMainWindow):
                 "شرح پیگیری": followup_description,
                 "پایان کار": "بله" if is_completed else "خیر",
                 "آخرین ویرایش‌کننده": editor,
+                "قطعه مصرفی": consumable_part,
             })
 
         table = self.ui.tblReportList
@@ -6744,7 +6755,7 @@ class MainWindow(QMainWindow):
                 str(row_index + 1), row[0], row[1],
                 self._format_jalali_date(row[2]), row[3], row[4],
                 row[5], row[6], row[7],
-                self._format_jalali_date(row[8]), row[9],
+                self._format_jalali_date(row[8]), row[9], row[10],
             ]
             for col, value in enumerate(values):
                 item = QTableWidgetItem(str(value or ""))
@@ -6755,7 +6766,7 @@ class MainWindow(QMainWindow):
                     item.setData(Qt.ItemDataRole.UserRole, row[0])
                 table.setItem(row_index, col, item)
 
-        widths = [55, 105, 160, 115, 150, 150, 140, 320, 125, 125, 300]
+        widths = [55, 105, 160, 115, 150, 150, 140, 320, 125, 125, 300, 180]
         for col, width in enumerate(widths):
             table.setColumnWidth(col, width)
 
@@ -7123,7 +7134,8 @@ class MainWindow(QMainWindow):
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT [tarikh], [vaziyat], [sharhepey], [editor], [payan]
+                SELECT [tarikh], [vaziyat], [sharhepey], [editor], [payan],
+                       [GeteMasarfi]
                 FROM [tblkar]
                 WHERE [wonumber] = ?
             """, (wonumber,))
@@ -7147,7 +7159,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "سوابق پیگیری", "برای این درخواست اطلاعاتی ثبت نشده است.")
             return
 
-        completion_date, status, description, editor, is_completed = row
+        completion_date, status, description, editor, is_completed, consumable_part = row
         date_display = self._format_jalali_date(completion_date) or "ثبت نشده"
         lines = [
             f"شماره درخواست: {wonumber}",
@@ -7156,6 +7168,7 @@ class MainWindow(QMainWindow):
             f"تاریخ پایان: {date_display}",
             f"تغییردهنده وضعیت: {editor or 'ثبت نشده'}",
             f"شرح پیگیری / نتیجه کار: {description or ''}",
+            f"قطعه مصرفی: {consumable_part or 'ثبت نشده'}",
         ]
         QMessageBox.information(self, f"اطلاعات پیگیری درخواست {wonumber}", "\n".join(lines))
 

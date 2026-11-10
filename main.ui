@@ -1223,6 +1223,15 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
              </property>
             </widget>
            </item>
+           <item row="3" column="0" colspan="6">
+            <layout class="QHBoxLayout" name="horizontalLayoutReportStats">
+             <item><widget class="QLabel" name="lblReportTotalCount"><property name="text"><string>کل کارها: 0</string></property></widget></item>
+             <item><widget class="QLabel" name="lblReportCompletedCount"><property name="text"><string>پایان‌یافته: 0</string></property></widget></item>
+             <item><widget class="QLabel" name="lblReportStoppedCount"><property name="text"><string>متوقف‌شده: 0</string></property></widget></item>
+             <item><widget class="QLabel" name="lblReportInProgressCount"><property name="text"><string>در حال انجام: 0</string></property></widget></item>
+             <item><widget class="QLabel" name="lblReportPendingCount"><property name="text"><string>در انتظار بررسی: 0</string></property></widget></item>
+            </layout>
+           </item>
           </layout>
          </widget>
         </item>

@@ -696,6 +696,16 @@ class MainWindow(QMainWindow):
         )
         self.btnAppearanceDefaults.clicked.connect(self.open_default_appearance_settings)
 
+        # نوار کناری باید در ارتفاع صفحه جا شود؛ همه گزینه‌ها قابل مشاهده و اسکرول‌ناپذیر باشند.
+        nav_layout.setContentsMargins(8, 8, 8, 8)
+        nav_layout.setSpacing(3)
+        self.ui.navigationPanel.setStyleSheet(
+            self.ui.navigationPanel.styleSheet()
+            + "\nQPushButton { min-height: 28px; padding: 2px 6px; }"
+        )
+        for navigation_button in self.ui.navigationPanel.findChildren(QPushButton):
+            navigation_button.setFixedHeight(36)
+
         self.ui.btnRepairs.clicked.connect(lambda: self.open_page(self.ui.tabKar))
         self.ui.btnAssets.clicked.connect(lambda: self.open_page(self.ui.tabAmval))
         self.ui.btnHotel.clicked.connect(lambda: self.open_page(self.ui.tabHotel))

@@ -208,6 +208,19 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="btnMesc">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>42</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>مدیریت کد کالاهای MESC</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="btnAssets">
          <property name="minimumSize">
           <size>
@@ -426,7 +439,7 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="3" column="1">
            <widget class="QPushButton" name="btnOpenHotel">
             <property name="minimumSize">
              <size>
@@ -463,6 +476,14 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
               <height>70</height>
              </size>
             </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QPushButton" name="btnOpenUserActivityLog">
+            <property name="minimumSize">
+             <size><width>0</width><height>70</height></size>
+            </property>
+            <property name="text"><string>گزارش فعالیت کاربران</string></property>
            </widget>
           </item>
          </layout>
@@ -538,7 +559,7 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
               </property>
              </widget>
             </item>
-            <item row="3" column="1">
+            <item row="2" column="1">
              <widget class="QLineEdit" name="dateTarikhdarkhast" />
             </item>
             <item row="3" column="0">
@@ -1333,7 +1354,7 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
            <item row="2" column="1">
             <widget class="QLineEdit" name="txtMescUnit" />
            </item>
-           <item row="3" column="2">
+           <item row="2" column="2">
             <widget class="QLabel" name="lblMescPic">
              <property name="text">
               <string>تصویر کالا (اختیاری):</string>
@@ -3557,6 +3578,7 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
     </property>
     <addaction name="actionEquipmentList" />
     <addaction name="actionAssets" />
+    <addaction name="actionMesc" />
    </widget>
    <widget class="QMenu" name="menuHotel">
     <property name="title">
@@ -3577,6 +3599,7 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
     </property>
     <addaction name="actionReportRepairs" />
     <addaction name="actionReportEquipment" />
+    <addaction name="actionUserActivityLog" />
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -3733,6 +3756,9 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
     <string>اموال</string>
    </property>
   </action>
+  <action name="actionMesc">
+   <property name="text"><string>مدیریت کد کالاهای MESC</string></property>
+  </action>
   <action name="actionReportRepairs">
    <property name="text">
     <string>گزارش تعمیرات</string>
@@ -3742,6 +3768,9 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
    <property name="text">
     <string>گزارش تجهیزات</string>
    </property>
+  </action>
+  <action name="actionUserActivityLog">
+   <property name="text"><string>گزارش فعالیت کاربران</string></property>
   </action>
   <action name="actionAbout">
    <property name="text">

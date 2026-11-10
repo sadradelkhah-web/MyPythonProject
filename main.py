@@ -438,6 +438,9 @@ class MainWindow(QMainWindow):
         self.user = user
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        # تقسیم مساوی فضای عمودی بین جدول گزارش و بخش ثبت پیگیری
+        self.ui.verticalLayoutReport.setStretch(2, 1)
+        self.ui.verticalLayoutReport.setStretch(3, 1)
         self._appearance_base_stylesheet = self.styleSheet()
         self.appearance_settings = load_user_appearance_settings(self.user.get("userid"))
         self._configure_responsive_window()

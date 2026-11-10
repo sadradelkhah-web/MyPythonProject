@@ -400,7 +400,7 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="3" column="1">
            <widget class="QPushButton" name="btnOpenMesc">
             <property name="minimumSize">
              <size>
@@ -1209,6 +1209,21 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
              </property>
             </widget>
            </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="lblTrackingConsumablePartTitle">
+             <property name="text">
+              <string>قطعه مصرفی:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1" colspan="5">
+            <widget class="QLineEdit" name="txtTrackingConsumablePart">
+             <property name="placeholderText">
+              <string>در صورت مصرف، نام قطعه را وارد کنید</string>
+             </property>
+            </widget>
+           </item>
+
            <item row="2" column="1">
             <widget class="QPushButton" name="btnSaveTracking">
              <property name="text">
@@ -1216,14 +1231,14 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
              </property>
             </widget>
            </item>
-           <item row="2" column="2">
+           <item row="3" column="2">
             <widget class="QPushButton" name="btnViewTrackingHistory">
              <property name="text">
               <string>مشاهده سوابق پیگیری</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="0" colspan="6">
+           <item row="4" column="0" colspan="6">
             <layout class="QHBoxLayout" name="horizontalLayoutReportStats">
              <item><widget class="QLabel" name="lblReportTotalCount"><property name="text"><string>کل کارها: 0</string></property></widget></item>
              <item><widget class="QLabel" name="lblReportCompletedCount"><property name="text"><string>پایان‌یافته: 0</string></property></widget></item>

@@ -1084,8 +1084,7 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
           </layout>
          </widget>
         </item>
-        <item>
-         <widget class="QTableWidget" name="tblReportList">
+        <item stretch="1"><widget class="QTableWidget" name="tblReportList">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -1161,8 +1160,7 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
           </column>
          </widget>
         </item>
-        <item>
-         <widget class="QGroupBox" name="groupTracking">
+        <item stretch="1"><widget class="QGroupBox" name="groupTracking">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
             <horstretch>0</horstretch>

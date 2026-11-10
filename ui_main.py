@@ -783,9 +783,9 @@ class Ui_MainWindow(object):
 
         self.groupTracking = QGroupBox(self.tabReport)
         self.groupTracking.setObjectName(u"groupTracking")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setVerticalStretch(1)
         sizePolicy3.setHeightForWidth(self.groupTracking.sizePolicy().hasHeightForWidth())
         self.groupTracking.setSizePolicy(sizePolicy3)
         self.gridTracking = QGridLayout(self.groupTracking)

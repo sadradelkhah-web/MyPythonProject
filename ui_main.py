@@ -142,6 +142,7 @@ class Ui_MainWindow(object):
         self.btnMesc = QPushButton(self.navigationPanel)
         self.btnMesc.setObjectName(u"btnMesc")
         self.btnMesc.setMinimumSize(QSize(0, 42))
+
         self.verticalLayoutNavigation.addWidget(self.btnMesc)
 
         self.btnAssets = QPushButton(self.navigationPanel)
@@ -268,7 +269,9 @@ class Ui_MainWindow(object):
         self.btnOpenUserActivityLog = QPushButton(self.tabHome)
         self.btnOpenUserActivityLog.setObjectName(u"btnOpenUserActivityLog")
         self.btnOpenUserActivityLog.setMinimumSize(QSize(0, 70))
+
         self.gridLayoutHome.addWidget(self.btnOpenUserActivityLog, 5, 0, 1, 1)
+
 
         self.verticalLayoutHome.addLayout(self.gridLayoutHome)
 
@@ -320,7 +323,7 @@ class Ui_MainWindow(object):
         self.dateTarikhdarkhast = QLineEdit(self.tabKar)
         self.dateTarikhdarkhast.setObjectName(u"dateTarikhdarkhast")
 
-        self.formLayoutKar.setWidget(3, QFormLayout.ItemRole.FieldRole, self.dateTarikhdarkhast)
+        self.formLayoutKar.setWidget(2, QFormLayout.ItemRole.FieldRole, self.dateTarikhdarkhast)
 
         self.label_15 = QLabel(self.tabKar)
         self.label_15.setObjectName(u"label_15")
@@ -951,7 +954,7 @@ class Ui_MainWindow(object):
         self.lblMescPic = QLabel(self.groupMescFields)
         self.lblMescPic.setObjectName(u"lblMescPic")
 
-        self.gridLayoutMescFields.addWidget(self.lblMescPic, 3, 2, 1, 1)
+        self.gridLayoutMescFields.addWidget(self.lblMescPic, 2, 2, 1, 1)
 
         self.mescPicturePanel = QWidget(self.groupMescFields)
         self.mescPicturePanel.setObjectName(u"mescPicturePanel")
@@ -2468,7 +2471,7 @@ class Ui_MainWindow(object):
         self.btnOpenAssets.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0645\u0648\u0627\u0644", None))
         self.btnOpenHotel.setText(QCoreApplication.translate("MainWindow", u"\u0645\u062f\u06cc\u0631\u06cc\u062a \u0627\u062a\u0627\u0642\u200c\u062f\u0627\u0631\u06cc", None))
         self.btnOpenAnbarTahrir.setText(QCoreApplication.translate("MainWindow", u"\u0627\u0646\u0628\u0627\u0631 \u0644\u0648\u0627\u0632\u0645\u200c\u0627\u0644\u062a\u062d\u0631\u06cc\u0631", None))
-        self.btnOpenMtoTahrir.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0642\u0627\u0636\u0627\u06cc \u0644\u0648\u0627\u0632\u0645\u200c\u0627\u0644\u062a\u062d\u0631\u06ccر", None))
+        self.btnOpenMtoTahrir.setText(QCoreApplication.translate("MainWindow", u"\u062a\u0642\u0627\u0636\u0627\u06cc \u0644\u0648\u0627\u0632\u0645\u200c\u0627\u0644\u062a\u062d\u0631\u06cc\u0631", None))
         self.btnOpenUserActivityLog.setText(QCoreApplication.translate("MainWindow", u"\u06af\u0632\u0627\u0631\u0634 \u0641\u0639\u0627\u0644\u06cc\u062a \u06a9\u0627\u0631\u0628\u0631\u0627\u0646", None))
         self.tabMain.setTabText(self.tabMain.indexOf(self.tabHome), QCoreApplication.translate("MainWindow", u"\u0635\u0641\u062d\u0647 \u0627\u0635\u0644\u06cc", None))
         self.btnBackHomeKar.setText(QCoreApplication.translate("MainWindow", u"\u062e\u0631\u0648\u062c \u0627\u0632 \u0627\u06cc\u0646 \u062a\u0628", None))

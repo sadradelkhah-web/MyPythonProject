@@ -30,13 +30,11 @@ def get_connection():
             f"فایل پایگاه داده پیدا نشد: {DB_PATH}"
         )
 
-    # قالب‌بندی مقدار PWD برای جلوگیری از تفسیر اشتباه کاراکترهای خاص ODBC
-    safe_password = "{" + DB_PASSWORD.replace("}", "}}") + "}"
-
+    # رمز عبور خام استفاده می‌شود؛ آزمایش ODBC نشان داد این قالب صحیح است.
     connection_string = (
         r"DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};"
         f"DBQ={db_file};"
-        f"PWD={safe_password};"
+        f"PWD={DB_PASSWORD};"
     )
 
     return pyodbc.connect(connection_string, timeout=15)

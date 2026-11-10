@@ -6311,6 +6311,7 @@ class MainWindow(QMainWindow):
                     date_widget.setPlaceholderText("شمسی: 1405/07/18 - خالی = همه تاریخ‌ها")
 
         self.ui.txtTrackingDate.setText(today)
+        self.ui.txtTrackingConsumablePart.setPlaceholderText("در صورت مصرف، نام قطعه را وارد کنید")
 
         self.ui.cmbReportUnit.clear()
         self.ui.cmbReportUnit.addItem("همه واحدها")
@@ -7024,12 +7025,15 @@ class MainWindow(QMainWindow):
         row = self.ui.tblReportList.currentRow()
         if row < 0:
             self.ui.lblSelectedWorkNo.setText("—")
+            self.ui.txtTrackingConsumablePart.clear()
             return
         item = self.ui.tblReportList.item(row, 1)
         number = item.data(Qt.ItemDataRole.UserRole) if item else ""
         if not number and item:
             number = item.text()
         self.ui.lblSelectedWorkNo.setText(str(number or "—"))
+        part_item = self.ui.tblReportList.item(row, 11)
+        self.ui.txtTrackingConsumablePart.setText(part_item.text() if part_item else "")
 
     def save_tracking(self):
         if not self.can_manage_tracking():
@@ -7047,6 +7051,7 @@ class MainWindow(QMainWindow):
         status = self.ui.cmbTrackingStatus.currentText().strip()
         date_text = self._date_digits(self.ui.txtTrackingDate.text())
         note = self.ui.txtTrackingNote.toPlainText().strip()
+        consumable_part = self.ui.txtTrackingConsumablePart.text().strip()
         is_completed = status.casefold() in ("پایان", "تکمیل شده")
 
         if is_completed:
@@ -7061,10 +7066,6 @@ class MainWindow(QMainWindow):
             except ValueError:
                 QMessageBox.warning(self, "تاریخ پایان نامعتبر", "تاریخ پایان کار معتبر نیست.")
                 return
-
-        if not note:
-            QMessageBox.warning(self, "شرح پیگیری", "شرح پیگیری یا نتیجه انجام کار را وارد کنید.")
-            return
 
         conn = None
         cursor = None
@@ -7082,18 +7083,20 @@ class MainWindow(QMainWindow):
                         [payan] = ?,
                         [tarikh] = ?,
                         [editor] = ?,
-                        [sharhepey] = ?
+                        [sharhepey] = ?,
+                        [GeteMasarfi] = ?
                     WHERE [wonumber] = ?
-                """, ("پایان", True, completion_date, self.username, note, wonumber))
+                """, ("پایان", True, completion_date, self.username, note, consumable_part, wonumber))
             else:
                 cursor.execute("""
                     UPDATE [tblkar]
                     SET [vaziyat] = ?,
                         [payan] = ?,
                         [editor] = ?,
-                        [sharhepey] = ?
+                        [sharhepey] = ?,
+                        [GeteMasarfi] = ?
                     WHERE [wonumber] = ?
-                """, (status, False, self.username, note, wonumber))
+                """, (status, False, self.username, note, consumable_part, wonumber))
 
             if cursor.rowcount == 0:
                 QMessageBox.warning(

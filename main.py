@@ -7083,20 +7083,20 @@ class MainWindow(QMainWindow):
                         [payan] = ?,
                         [tarikh] = ?,
                         [editor] = ?,
-                        [sharhepey] = ?,
+                        [sharhepey] = IIF(? = '', [sharhepey], ?),
                         [GeteMasarfi] = ?
                     WHERE [wonumber] = ?
-                """, ("پایان", True, completion_date, self.username, note, consumable_part, wonumber))
+                """, ("پایان", True, completion_date, self.username, note, note, consumable_part, wonumber))
             else:
                 cursor.execute("""
                     UPDATE [tblkar]
                     SET [vaziyat] = ?,
                         [payan] = ?,
                         [editor] = ?,
-                        [sharhepey] = ?,
+                        [sharhepey] = IIF(? = '', [sharhepey], ?),
                         [GeteMasarfi] = ?
                     WHERE [wonumber] = ?
-                """, (status, False, self.username, note, consumable_part, wonumber))
+                """, (status, False, self.username, note, note, consumable_part, wonumber))
 
             if cursor.rowcount == 0:
                 QMessageBox.warning(

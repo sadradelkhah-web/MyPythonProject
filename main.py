@@ -6682,6 +6682,12 @@ class MainWindow(QMainWindow):
 
         display_rows = []
         export_rows = []
+        status_counts = {
+            "پایان": 0,
+            "متوقف شده": 0,
+            "در حال انجام": 0,
+            "در انتظار بررسی": 0,
+        }
         for row in rows:
             wonumber = str(row[0] or "").strip()
             unit = str(row[1] or "").strip()
@@ -6726,6 +6732,10 @@ class MainWindow(QMainWindow):
             if search and search not in haystack and normalize_digits(search) not in normalize_digits(haystack):
                 continue
 
+            normalized_status = normalize_status(status)
+            if normalized_status in status_counts:
+                status_counts[normalized_status] += 1
+
             display_rows.append((
                 wonumber, unit, date_raw, topic, area, requester,
                 request_description, status, followup_date, followup_description,
@@ -6769,6 +6779,12 @@ class MainWindow(QMainWindow):
         widths = [55, 105, 160, 115, 150, 150, 140, 320, 125, 125, 300, 180]
         for col, width in enumerate(widths):
             table.setColumnWidth(col, width)
+
+        self.ui.lblReportTotalCount.setText(f"کل کارها: {len(display_rows)}")
+        self.ui.lblReportCompletedCount.setText(f"پایان‌یافته: {status_counts['پایان']}")
+        self.ui.lblReportStoppedCount.setText(f"متوقف‌شده: {status_counts['متوقف شده']}")
+        self.ui.lblReportInProgressCount.setText(f"در حال انجام: {status_counts['در حال انجام']}")
+        self.ui.lblReportPendingCount.setText(f"در انتظار بررسی: {status_counts['در انتظار بررسی']}")
 
         self._report_export_rows = export_rows
         self._report_last_load_success = True

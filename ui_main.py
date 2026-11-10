@@ -779,7 +779,7 @@ class Ui_MainWindow(object):
         self.tblReportList.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.tblReportList.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
-        self.verticalLayoutReport.addWidget(self.tblReportList)
+        self.verticalLayoutReport.addWidget(self.tblReportList, 1)
 
         self.groupTracking = QGroupBox(self.tabReport)
         self.groupTracking.setObjectName(u"groupTracking")
@@ -883,7 +883,7 @@ class Ui_MainWindow(object):
         self.gridTracking.addLayout(self.horizontalLayoutReportStats, 4, 0, 1, 6)
 
 
-        self.verticalLayoutReport.addWidget(self.groupTracking)
+        self.verticalLayoutReport.addWidget(self.groupTracking, 1)
 
         self.tabMain.addTab(self.tabReport, "")
         self.tabMesc = QWidget()

@@ -702,6 +702,7 @@ class MainWindow(QMainWindow):
         self.ui.btnAnbarTahrir.clicked.connect(lambda: self.open_page(self.ui.tabAnbarTahrir))
         self.ui.btnMtoTahrir.clicked.connect(lambda: self.open_page(self.ui.tabMtoTahrir))
         self.ui.btnEquipment.clicked.connect(lambda: self.open_placeholder("تجهیزات"))
+        self.ui.btnMesc.clicked.connect(self.open_mesc_tab)
         self.ui.btnReports.clicked.connect(lambda: self.open_page(self.ui.tabReport))
         self.ui.btnExit.clicked.connect(self.close)
 
@@ -716,6 +717,7 @@ class MainWindow(QMainWindow):
         self.ui.btnOpenAnbarTahrir.clicked.connect(lambda: self.open_page(self.ui.tabAnbarTahrir))
         self.ui.btnOpenMtoTahrir.clicked.connect(lambda: self.open_page(self.ui.tabMtoTahrir))
         self.ui.btnOpenMesc.clicked.connect(self.open_mesc_tab)
+        self.ui.btnOpenUserActivityLog.clicked.connect(self.open_user_activity_log)
 
         # دکمه خروج از هر تب به صفحه اصلی
         self.exit_tab_buttons = (
@@ -748,6 +750,7 @@ class MainWindow(QMainWindow):
         # مدیریت کاربران فقط برای SuperAdmin نمایش داده می‌شود.
         self.ui.btnUsers.setVisible(self.is_master)
         self.ui.btnOpenUsers.setVisible(self.is_master)
+        self.ui.btnOpenUserActivityLog.setVisible(self.is_master)
         # دکمه MESC برای همه کاربران قابل مشاهده است؛ دسترسی با مجوز تب کنترل می‌شود.
         self.ui.btnOpenMesc.setVisible(True)
 
@@ -774,7 +777,7 @@ class MainWindow(QMainWindow):
             "tabAnbarTahrir": (self.ui.btnAnbarTahrir, self.ui.btnOpenAnbarTahrir),
             "tabMtoTahrir": (self.ui.btnMtoTahrir, self.ui.btnOpenMtoTahrir),
             "tabChangePassword": (self.ui.btnPassword, self.ui.btnOpenPassword),
-            "tabMesc": (self.ui.btnOpenMesc,),
+            "tabMesc": (self.ui.btnMesc, self.ui.btnOpenMesc),
         }
         for tab_name, buttons in nav_map.items():
             allowed = self.is_master or bool(self.tab_permissions.get(tab_name, False))
@@ -793,6 +796,7 @@ class MainWindow(QMainWindow):
             "tabHotel": ("actionHotel",),
             "tabAnbarTahrir": ("actionAnbarTahrir",),
             "tabMtoTahrir": ("actionMtoTahrir",),
+            "tabMesc": ("actionMesc",),
         }
         for tab_name, action_names in menu_actions.items():
             allowed = self.is_master or bool(self.tab_permissions.get(tab_name, False))
@@ -832,6 +836,9 @@ class MainWindow(QMainWindow):
         )
         ui.actionAbout.triggered.connect(self.show_about)
         ui.actionAssets.triggered.connect(lambda checked=False: self.open_page(self.ui.tabAmval))
+        ui.actionMesc.triggered.connect(self.open_mesc_tab)
+        ui.actionUserActivityLog.triggered.connect(self.open_user_activity_log)
+        ui.actionUserActivityLog.setVisible(self.is_master)
         ui.actionHotel.triggered.connect(lambda checked=False: self.open_page(self.ui.tabHotel))
         ui.actionAnbarTahrir.triggered.connect(lambda checked=False: self.open_page(self.ui.tabAnbarTahrir))
         ui.actionMtoTahrir.triggered.connect(lambda checked=False: self.open_page(self.ui.tabMtoTahrir))

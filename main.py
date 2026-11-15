@@ -35,6 +35,7 @@ from PySide6.QtWidgets import (
     QFrame,
 )
 
+from version import APP_VERSION
 from ui_main import Ui_MainWindow
 from db_config import get_connection
 from database_backup import create_database_backup
@@ -458,7 +459,7 @@ class MainWindow(QMainWindow):
             except Exception as exc:
                 QMessageBox.critical(self, "خطای مجوزها", f"خواندن مجوزهای دسترسی ناموفق بود؛ دسترسی‌ها محدود می‌شوند.\n\n{exc}")
                 self.tab_permissions = {}
-        self.setWindowTitle("سامانه مدیریت درخواست‌های تعمیرات")
+        self.setWindowTitle(f"سامانه مدیریت درخواست‌های تعمیرات — نسخه {APP_VERSION}")
         self.setLayoutDirection(Qt.RightToLeft)
         self.setup_status_bar()
         self.build_application_shell()
@@ -607,6 +608,27 @@ class MainWindow(QMainWindow):
                 }
             """)
             status_bar.addWidget(label)
+
+        # شماره نسخه برنامه در بخش ثابت نوار وضعیت نمایش داده می‌شود.
+        self.lblAppVersion = QLabel(f"نسخه {APP_VERSION}")
+        self.lblAppVersion.setMinimumWidth(105)
+        self.lblAppVersion.setMinimumHeight(27)
+        self.lblAppVersion.setAlignment(Qt.AlignCenter)
+        self.lblAppVersion.setLayoutDirection(Qt.RightToLeft)
+        self.lblAppVersion.setStyleSheet("""
+            QLabel {
+                color: #263548;
+                background-color: #ffffff;
+                border: 1px solid #dce4ee;
+                border-radius: 5px;
+                padding: 2px 7px;
+                margin: 3px 3px;
+                font-family: 'B Nazanin';
+                font-size: 10pt;
+                font-weight: bold;
+            }
+        """)
+        status_bar.addPermanentWidget(self.lblAppVersion)
 
         username = str(self.user.get("username") or "—").strip()
         vahed = str(self.user.get("vahed") or "—").strip()

@@ -1513,10 +1513,11 @@ class MainWindow(QMainWindow):
         self.show_home()
 
     def show_about(self):
-        QMessageBox.information(
+        QMessageBox.about(
             self,
             "درباره برنامه",
-            "سامانه مدیریت\n\nنسخه اولیه مدیریت کاربران و ماژول‌های برنامه",
+            f"سامانه مدیریت درخواست‌های تعمیرات\n\nنسخه {APP_VERSION}\n\n"
+            "نرم‌افزار مدیریت درخواست‌های تعمیرات، پیگیری کارها و ماژول‌های سازمانی",
         )
 
 

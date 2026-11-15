@@ -6388,11 +6388,11 @@ class MainWindow(QMainWindow):
         ])
 
         table = self.ui.tblReportList
-        table.setColumnCount(12)
+        table.setColumnCount(13)
         table.setHorizontalHeaderLabels([
             "ردیف", "شماره درخواست", "واحد", "تاریخ درخواست",
             "موضوع درخواست", "محل کار", "درخواست‌کننده", "شرح درخواست",
-            "وضعیت", "تاریخ پیگیری/پایان", "شرح پیگیری", "قطعه مصرفی"
+            "وضعیت", "تاریخ پیگیری/پایان", "شرح پیگیری", "قطعه مصرفی", "ویرایشگر"
         ])
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -6748,7 +6748,7 @@ class MainWindow(QMainWindow):
             haystack = " ".join([
                 wonumber, unit, date_raw, topic, area, sub_area,
                 requester, request_description, status, followup_description,
-                consumable_part,
+                consumable_part, editor,
             ]).casefold()
             if search and search not in haystack and normalize_digits(search) not in normalize_digits(haystack):
                 continue
@@ -6760,7 +6760,7 @@ class MainWindow(QMainWindow):
             display_rows.append((
                 wonumber, unit, date_raw, topic, area, requester,
                 request_description, status, followup_date, followup_description,
-                consumable_part,
+                consumable_part, editor,
             ))
             export_rows.append({
                 "شماره درخواست": wonumber,
@@ -6775,7 +6775,7 @@ class MainWindow(QMainWindow):
                 "تاریخ پیگیری/پایان": self._format_jalali_date(followup_date),
                 "شرح پیگیری": followup_description,
                 "پایان کار": "بله" if is_completed else "خیر",
-                "آخرین ویرایش‌کننده": editor,
+                "ویرایشگر": editor,
                 "قطعه مصرفی": consumable_part,
             })
 
@@ -6786,7 +6786,7 @@ class MainWindow(QMainWindow):
                 str(row_index + 1), row[0], row[1],
                 self._format_jalali_date(row[2]), row[3], row[4],
                 row[5], row[6], row[7],
-                self._format_jalali_date(row[8]), row[9], row[10],
+                self._format_jalali_date(row[8]), row[9], row[10], row[11],
             ]
             for col, value in enumerate(values):
                 item = QTableWidgetItem(str(value or ""))
@@ -6797,7 +6797,7 @@ class MainWindow(QMainWindow):
                     item.setData(Qt.ItemDataRole.UserRole, row[0])
                 table.setItem(row_index, col, item)
 
-        widths = [55, 105, 160, 115, 150, 150, 140, 320, 125, 125, 300, 180]
+        widths = [55, 105, 160, 115, 150, 150, 140, 320, 125, 125, 300, 180, 150]
         for col, width in enumerate(widths):
             table.setColumnWidth(col, width)
 

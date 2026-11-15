@@ -783,6 +783,7 @@ class Ui_MainWindow(object):
 
         self.groupTracking = QGroupBox(self.tabReport)
         self.groupTracking.setObjectName(u"groupTracking")
+        self.groupTracking.setLayoutDirection(Qt.RightToLeft)
         sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         sizePolicy3.setHorizontalStretch(0)
         sizePolicy3.setVerticalStretch(0)
@@ -844,14 +845,14 @@ class Ui_MainWindow(object):
 
         self.btnSaveTracking = QPushButton(self.groupTracking)
         self.btnSaveTracking.setObjectName(u"btnSaveTracking")
-        self.btnSaveTracking.setFixedWidth(90)
+        self.btnSaveTracking.setFixedWidth(150)
         self.btnSaveTracking.setMinimumHeight(52)
 
         self.gridTracking.addWidget(self.btnSaveTracking, 1, 5, 1, 1)
 
         self.btnViewTrackingHistory = QPushButton(self.groupTracking)
         self.btnViewTrackingHistory.setObjectName(u"btnViewTrackingHistory")
-        self.btnViewTrackingHistory.setFixedWidth(90)
+        self.btnViewTrackingHistory.setFixedWidth(150)
         self.btnViewTrackingHistory.setMinimumHeight(52)
 
         self.gridTracking.addWidget(self.btnViewTrackingHistory, 2, 5, 1, 1)

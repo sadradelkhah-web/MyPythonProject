@@ -575,7 +575,7 @@ class UserAppearanceDialog(QDialog):
         self.spinFontSize = QSpinBox(self)
         self.spinFontSize.setRange(9, 16)
         self.spinFontSize.setSuffix(" pt")
-        self.spinFontSize.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.spinFontSize.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.spinFontSize.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         self.spinFontSize.setMinimumWidth(120)
         form.addRow("اندازه قلم عمومی:", self.spinFontSize)
@@ -587,7 +587,7 @@ class UserAppearanceDialog(QDialog):
         self.spinButtonFontSize = QSpinBox(self)
         self.spinButtonFontSize.setRange(8, 20)
         self.spinButtonFontSize.setSuffix(" pt")
-        self.spinButtonFontSize.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.spinButtonFontSize.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.spinButtonFontSize.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         self.spinButtonFontSize.setMinimumWidth(120)
         form.addRow("اندازه قلم دکمه‌ها:", self.spinButtonFontSize)
@@ -595,7 +595,7 @@ class UserAppearanceDialog(QDialog):
         self.spinTableFontSize = QSpinBox(self)
         self.spinTableFontSize.setRange(8, 20)
         self.spinTableFontSize.setSuffix(" pt")
-        self.spinTableFontSize.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.spinTableFontSize.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.spinTableFontSize.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         self.spinTableFontSize.setMinimumWidth(120)
         form.addRow("اندازه قلم جدول‌ها:", self.spinTableFontSize)
@@ -673,9 +673,25 @@ class UserAppearanceDialog(QDialog):
                 font-family: "{dialog_font_family}"; font-size: {dialog_font_size}pt;
             }}
             QComboBox, QSpinBox {{
-                min-height: 30px; padding: 3px 6px;
+                min-height: 30px; padding: 3px 8px;
                 background: {control_background}; color: {dialog_text};
                 border: 1px solid {dialog_border}; border-radius: 4px;
+            }}
+            QSpinBox {{ padding-left: 30px; }}
+            QSpinBox::up-button {{
+                subcontrol-origin: border;
+                subcontrol-position: top left;
+                width: 22px;
+                border-right: 1px solid {dialog_border};
+                border-bottom: 1px solid {dialog_border};
+                border-top-left-radius: 3px;
+            }}
+            QSpinBox::down-button {{
+                subcontrol-origin: border;
+                subcontrol-position: bottom left;
+                width: 22px;
+                border-right: 1px solid {dialog_border};
+                border-bottom-left-radius: 3px;
             }}
             QComboBox:focus, QSpinBox:focus {{ border: 1px solid {dialog_accent}; }}
             QPushButton {{

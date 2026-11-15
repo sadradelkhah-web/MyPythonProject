@@ -831,7 +831,7 @@ class Ui_MainWindow(object):
         self.txtTrackingNote.setMinimumSize(QSize(0, 36))
         self.txtTrackingNote.setMaximumSize(QSize(16777215, 48))
 
-        self.gridTracking.addWidget(self.txtTrackingNote, 1, 1, 1, 4)
+        self.gridTracking.addWidget(self.txtTrackingNote, 1, 1, 1, 5)
 
         self.lblTrackingConsumablePartTitle = QLabel(self.groupTracking)
         self.lblTrackingConsumablePartTitle.setObjectName(u"lblTrackingConsumablePartTitle")
@@ -841,21 +841,21 @@ class Ui_MainWindow(object):
         self.txtTrackingConsumablePart = QLineEdit(self.groupTracking)
         self.txtTrackingConsumablePart.setObjectName(u"txtTrackingConsumablePart")
 
-        self.gridTracking.addWidget(self.txtTrackingConsumablePart, 2, 1, 1, 4)
+        self.gridTracking.addWidget(self.txtTrackingConsumablePart, 2, 1, 1, 5)
 
         self.btnSaveTracking = QPushButton(self.groupTracking)
         self.btnSaveTracking.setObjectName(u"btnSaveTracking")
-        self.btnSaveTracking.setFixedWidth(150)
+        self.btnSaveTracking.setFixedWidth(250)
         self.btnSaveTracking.setMinimumHeight(52)
 
-        self.gridTracking.addWidget(self.btnSaveTracking, 1, 5, 1, 1)
+        self.gridTracking.addWidget(self.btnSaveTracking, 1, 6, 1, 1)
 
         self.btnViewTrackingHistory = QPushButton(self.groupTracking)
         self.btnViewTrackingHistory.setObjectName(u"btnViewTrackingHistory")
-        self.btnViewTrackingHistory.setFixedWidth(150)
+        self.btnViewTrackingHistory.setFixedWidth(250)
         self.btnViewTrackingHistory.setMinimumHeight(52)
 
-        self.gridTracking.addWidget(self.btnViewTrackingHistory, 2, 5, 1, 1)
+        self.gridTracking.addWidget(self.btnViewTrackingHistory, 2, 6, 1, 1)
 
         self.horizontalLayoutReportStats = QHBoxLayout()
         self.horizontalLayoutReportStats.setObjectName(u"horizontalLayoutReportStats")
@@ -885,7 +885,7 @@ class Ui_MainWindow(object):
         self.horizontalLayoutReportStats.addWidget(self.lblReportPendingCount)
 
 
-        self.gridTracking.addLayout(self.horizontalLayoutReportStats, 3, 0, 1, 6)
+        self.gridTracking.addLayout(self.horizontalLayoutReportStats, 3, 0, 1, 7)
 
 
         self.verticalLayoutReport.addWidget(self.groupTracking, 1)

@@ -1230,8 +1230,14 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
            </item>
            <item row="1" column="5">
             <widget class="QPushButton" name="btnSaveTracking">
+             <property name="minimumSize">
+              <size><width>90</width><height>52</height></size>
+             </property>
+             <property name="maximumSize">
+              <size><width>90</width><height>16777215</height></size>
+             </property>
              <property name="text">
-              <string>ثبت پیگیری / تکمیل کار</string>
+              <string>ثبت پیگیری&#10;/ تکمیل کار</string>
              </property>
             </widget>
            </item>
@@ -1251,8 +1257,14 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
            </item>
            <item row="2" column="5">
             <widget class="QPushButton" name="btnViewTrackingHistory">
+             <property name="minimumSize">
+              <size><width>90</width><height>52</height></size>
+             </property>
+             <property name="maximumSize">
+              <size><width>90</width><height>16777215</height></size>
+             </property>
              <property name="text">
-              <string>مشاهده سوابق پیگیری</string>
+              <string>مشاهده سوابق&#10;پیگیری</string>
              </property>
             </widget>
            </item>

@@ -575,6 +575,8 @@ class UserAppearanceDialog(QDialog):
         self.spinFontSize = QSpinBox(self)
         self.spinFontSize.setRange(9, 16)
         self.spinFontSize.setSuffix(" pt")
+        self.spinFontSize.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.spinFontSize.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         form.addRow("اندازه قلم عمومی:", self.spinFontSize)
 
         self.cmbButtonFontFamily = QComboBox(self)
@@ -584,11 +586,15 @@ class UserAppearanceDialog(QDialog):
         self.spinButtonFontSize = QSpinBox(self)
         self.spinButtonFontSize.setRange(8, 20)
         self.spinButtonFontSize.setSuffix(" pt")
+        self.spinButtonFontSize.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.spinButtonFontSize.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         form.addRow("اندازه قلم دکمه‌ها:", self.spinButtonFontSize)
 
         self.spinTableFontSize = QSpinBox(self)
         self.spinTableFontSize.setRange(8, 20)
         self.spinTableFontSize.setSuffix(" pt")
+        self.spinTableFontSize.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.spinTableFontSize.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         form.addRow("اندازه قلم جدول‌ها:", self.spinTableFontSize)
 
         self.cmbMenuBackground = QComboBox(self)

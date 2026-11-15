@@ -779,13 +779,13 @@ class Ui_MainWindow(object):
         self.tblReportList.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.tblReportList.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
-        self.verticalLayoutReport.addWidget(self.tblReportList, 1)
+        self.verticalLayoutReport.addWidget(self.tblReportList, 3)
 
         self.groupTracking = QGroupBox(self.tabReport)
         self.groupTracking.setObjectName(u"groupTracking")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(1)
+        sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.groupTracking.sizePolicy().hasHeightForWidth())
         self.groupTracking.setSizePolicy(sizePolicy3)
         self.gridTracking = QGridLayout(self.groupTracking)
@@ -827,10 +827,10 @@ class Ui_MainWindow(object):
 
         self.txtTrackingNote = QPlainTextEdit(self.groupTracking)
         self.txtTrackingNote.setObjectName(u"txtTrackingNote")
-        self.txtTrackingNote.setMinimumSize(QSize(0, 45))
-        self.txtTrackingNote.setMaximumSize(QSize(16777215, 65))
+        self.txtTrackingNote.setMinimumSize(QSize(0, 36))
+        self.txtTrackingNote.setMaximumSize(QSize(16777215, 48))
 
-        self.gridTracking.addWidget(self.txtTrackingNote, 1, 1, 1, 5)
+        self.gridTracking.addWidget(self.txtTrackingNote, 1, 1, 1, 4)
 
         self.lblTrackingConsumablePartTitle = QLabel(self.groupTracking)
         self.lblTrackingConsumablePartTitle.setObjectName(u"lblTrackingConsumablePartTitle")
@@ -840,17 +840,17 @@ class Ui_MainWindow(object):
         self.txtTrackingConsumablePart = QLineEdit(self.groupTracking)
         self.txtTrackingConsumablePart.setObjectName(u"txtTrackingConsumablePart")
 
-        self.gridTracking.addWidget(self.txtTrackingConsumablePart, 2, 1, 1, 5)
+        self.gridTracking.addWidget(self.txtTrackingConsumablePart, 2, 1, 1, 4)
 
         self.btnSaveTracking = QPushButton(self.groupTracking)
         self.btnSaveTracking.setObjectName(u"btnSaveTracking")
 
-        self.gridTracking.addWidget(self.btnSaveTracking, 3, 1, 1, 1)
+        self.gridTracking.addWidget(self.btnSaveTracking, 1, 5, 1, 1)
 
         self.btnViewTrackingHistory = QPushButton(self.groupTracking)
         self.btnViewTrackingHistory.setObjectName(u"btnViewTrackingHistory")
 
-        self.gridTracking.addWidget(self.btnViewTrackingHistory, 3, 2, 1, 1)
+        self.gridTracking.addWidget(self.btnViewTrackingHistory, 2, 5, 1, 1)
 
         self.horizontalLayoutReportStats = QHBoxLayout()
         self.horizontalLayoutReportStats.setObjectName(u"horizontalLayoutReportStats")
@@ -880,7 +880,7 @@ class Ui_MainWindow(object):
         self.horizontalLayoutReportStats.addWidget(self.lblReportPendingCount)
 
 
-        self.gridTracking.addLayout(self.horizontalLayoutReportStats, 4, 0, 1, 6)
+        self.gridTracking.addLayout(self.horizontalLayoutReportStats, 3, 0, 1, 6)
 
 
         self.verticalLayoutReport.addWidget(self.groupTracking, 1)

@@ -1215,7 +1215,7 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
              </property>
             </widget>
            </item>
-           <item row="1" column="1" colspan="4">
+           <item row="1" column="1" colspan="5">
             <widget class="QPlainTextEdit" name="txtTrackingNote">
              <property name="minimumSize">
               <size>
@@ -1231,13 +1231,13 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
              </property>
             </widget>
            </item>
-           <item row="1" column="5">
+           <item row="1" column="6">
             <widget class="QPushButton" name="btnSaveTracking">
              <property name="minimumSize">
-              <size><width>150</width><height>52</height></size>
+              <size><width>250</width><height>52</height></size>
              </property>
              <property name="maximumSize">
-              <size><width>150</width><height>16777215</height></size>
+              <size><width>250</width><height>16777215</height></size>
              </property>
              <property name="text">
               <string>ثبت پیگیری&#10;/ تکمیل کار</string>
@@ -1251,14 +1251,14 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
              </property>
             </widget>
            </item>
-           <item row="2" column="1" colspan="4">
+           <item row="2" column="1" colspan="5">
             <widget class="QLineEdit" name="txtTrackingConsumablePart">
              <property name="placeholderText">
               <string>در صورت مصرف، نام قطعه را وارد کنید</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="5">
+           <item row="2" column="6">
             <widget class="QPushButton" name="btnViewTrackingHistory">
              <property name="minimumSize">
               <size><width>150</width><height>52</height></size>
@@ -1271,7 +1271,7 @@ QPushButton#hotelRoomCardButton:hover { border-width: 2px; }
              </property>
             </widget>
            </item>
-           <item row="3" column="0" colspan="6">
+           <item row="3" column="0" colspan="7">
             <layout class="QHBoxLayout" name="horizontalLayoutReportStats">
              <item><widget class="QLabel" name="lblReportTotalCount"><property name="text"><string>کل کارها: 0</string></property></widget></item>
              <item><widget class="QLabel" name="lblReportCompletedCount"><property name="text"><string>پایان‌یافته: 0</string></property></widget></item>
